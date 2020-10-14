@@ -210,7 +210,10 @@ local function UpdatePlayerModel( ply )
 		
 		timer.Simple( 0.1, function() if ply.SetupHands and isfunction( ply.SetupHands ) then ply:SetupHands() end end )
 		timer.Simple( 0.2, function()
+			if ply:GetInfo( "cl_playerhands" ) != "" then mdlname = ply:GetInfo( "cl_playerhands" ) end
 			local mdlhands = player_manager.TranslatePlayerHands( mdlname )
+			
+			
 			local hands_ent = ply:GetHands()
 			if hands_ent and mdlhands and istable( mdlhands ) then
 				if hands_ent:GetModel() != mdlhands.model then
@@ -276,6 +279,18 @@ hook.Add( "PlayerSpawn", "lf_playermodel_force_hook1", function( ply )
 	end
 end )
 
+hook.Add( "PlayerSetHandsModel", "lf_fe_hands_select2", function( ply, ent )
+	if ply:GetInfo( "cl_playerhands" ) and ply:GetInfo( "cl_playerhands" ) != "" then
+		local info = player_manager.TranslatePlayerHands(ply:GetInfo( "cl_playerhands" ))
+		
+		timer.Simple(0.5, function()
+			ent:SetModel( info.model )
+			ent:SetSkin( info.skin )
+			ent:SetBodyGroups( info.body )
+		end)
+	end
+end )
+
 local function ForceSetModel( ply, mdl )
 	if GetConVar( "sv_playermodel_selector_force" ):GetBool() and Allowed( ply ) and tobool( ply:GetInfoNum( "cl_playermodel_selector_force", 0 ) ) then
 		if !ply.lf_playermodel_spawned then
@@ -336,7 +351,7 @@ end
 if CLIENT then
 
 
-local Version = "3.3"
+local Version = "3.3 (Fesiug edit 1)"
 local Menu = { }
 local Frame
 local default_animations = { "idle_all_01", "menu_walk", "pose_standing_02", "pose_standing_03", "idle_fist" }
@@ -380,6 +395,8 @@ hook.Add( "PostGamemodeLoaded", "lf_playermodel_sboxcvars", function()
 	if !ConVarExists( "cl_playerskin" ) then CreateConVar( "cl_playerskin", "0", { FCVAR_ARCHIVE, FCVAR_USERINFO, FCVAR_DONTRECORD }, "The skin to use, if the model has any" ) end
 	if !ConVarExists( "cl_playerbodygroups" ) then CreateConVar( "cl_playerbodygroups", "0", { FCVAR_ARCHIVE, FCVAR_USERINFO, FCVAR_DONTRECORD }, "The bodygroups to use, if the model has any" ) end
 	if !ConVarExists( "cl_playerflexes" ) then CreateConVar( "cl_playerflexes", "0", { FCVAR_ARCHIVE, FCVAR_USERINFO, FCVAR_DONTRECORD }, "The flexes to use, if the model has any" ) end
+	
+	if !ConVarExists( "cl_playerhands" ) then CreateConVar( "cl_playerhands", "", { FCVAR_ARCHIVE, FCVAR_USERINFO, FCVAR_DONTRECORD }, "The hands to use, if the model has any" ) end
 end )
 
 
@@ -633,7 +650,113 @@ function Menu.Setup()
 			end
 			
 			Menu.ModelPopulate()
+			
+-------------------------------------------------------------
+		local handtab = Menu.Right:Add( "DPropertySheet" )	
+		Menu.Right:AddSheet( "Hands", handtab, "icon16/attach.png" )		
 		
+		local t = handtab:Add( "DLabel" )
+			t:SetPos( 129, 1 )
+			--t:SetSize( 100, 20 )
+			t:SetText( "Search:" )
+			
+			Menu.ModelFilter = handtab:Add( "DTextEntry" )
+			Menu.ModelFilter:SetPos( 168, 1 )
+			Menu.ModelFilter:SetSize( 246, 20 )
+			Menu.ModelFilter:SetUpdateOnType( true )
+			Menu.ModelFilter.OnValueChange = function() Menu.ModelPopulate() end
+			
+			local ModelScroll = handtab:Add( "DScrollPanel" )
+			handtab:AddSheet( "Icons", ModelScroll, "icon16/application_view_tile.png" )
+			ModelScroll:DockMargin( 2, 0, 2, 2 )
+			ModelScroll:Dock( FILL )
+			
+			local ModelIconLayout = ModelScroll:Add( "DIconLayout" )
+			ModelIconLayout:SetSpaceX( 2 )
+			ModelIconLayout:SetSpaceY( 2 )
+			ModelIconLayout:Dock( FILL )
+			
+			local modelicons = { }
+			
+			
+			local ModelList = handtab:Add( "DListView" )
+			handtab:AddSheet( "Table", ModelList, "icon16/application_view_list.png" )
+			ModelList:DockMargin( 5, 0, 5, 5 )
+			ModelList:Dock( FILL )
+			ModelList:SetMultiSelect( false )
+			ModelList:AddColumn( "Model" )
+			ModelList:AddColumn( "Path" )
+			ModelList.OnRowSelected = function()
+				local sel = ModelList:GetSelected()
+				if !sel[1] then return end
+				local name = tostring( sel[1]:GetValue(1) )
+				RunConsoleCommand( "cl_playerhands", name )
+				timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
+			end
+			
+			local AllModels = player_manager.AllValidModels()
+			--AllModels["AbsolutelyNone"] = ""
+			--PrintTable(AllModels)
+			
+			function Menu.ModelPopulate()
+				
+				ModelIconLayout:Clear()
+				ModelList:Clear()
+				
+				local ModelFilter = Menu.ModelFilter:GetValue() or nil
+				
+				local function IsInFilter( name )
+					if not ModelFilter or ModelFilter == "" then
+						return true
+					else
+						local tbl = string.Split( ModelFilter, " " )
+						for _, substr in pairs( tbl ) do
+							if not string.match( name:lower(), string.PatternSafe( substr:lower() ) ) then
+								return false
+							end
+						end
+						return true
+					end
+				end
+				
+						local icon = ModelIconLayout:Add( "SpawnIcon" )
+						icon:SetSize( 64, 64 )
+						icon:SetSpawnIcon( "icon64/playermodel.png" )
+						--icon:SetModel( model )
+						icon:SetTooltip( "Use playermodel" )
+						table.insert( modelicons, icon )
+						icon.DoClick = function()
+							RunConsoleCommand( "cl_playerhands", "" )
+							timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
+						end
+						
+						ModelList:AddLine( name, model )
+				
+				for name, model in SortedPairs( AllModels ) do
+					
+					if IsInFilter( name ) then
+					
+						local icon = ModelIconLayout:Add( "SpawnIcon" )
+						icon:SetSize( 64, 64 )
+						--icon:InvalidateLayout( true )
+						icon:SetModel( model )
+						icon:SetTooltip( name )
+						table.insert( modelicons, icon )
+						icon.DoClick = function()
+							RunConsoleCommand( "cl_playerhands", name )
+							timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
+						end
+						
+						ModelList:AddLine( name, model )
+						
+					end
+					
+				end
+				
+			end
+			
+			Menu.ModelPopulate()
+--------------------------------------------------------
 		
 		local favorites = Menu.Right:Add( "DPanel" )
 		Menu.Right:AddSheet( "Favorites", favorites, "icon16/star.png" )
@@ -1217,6 +1340,7 @@ function Menu.Setup()
 			t:AddFunction( "url", "copy", function( str ) SetClipboardText( str ) end )
 			
 			local intro = [[Created by <a href="javascript:url.open( 'http://steamcommunity.com/id/libertyforce' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/libertyforce' )">LibertyForce</a>.<br>Thank you for installing this addon! Enjoying it?<br>
+			Modified by <a href="javascript:url.open( 'http://steamcommunity.com/id/Fesiug' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/Fesiug' )">Fesiug</a>. You can now customize your hands!<br>
 			<a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )">Please leave a LIKE on the workshop page.</a>]]
 			if !game.SinglePlayer() and !LocalPlayer():IsSuperAdmin() then
 				intro = [[This server is running Enhanced PlayerModel Selector by <a href="javascript:url.open( 'http://steamcommunity.com/id/libertyforce' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/libertyforce' )">LibertyForce</a>. Enjoying it?<br>

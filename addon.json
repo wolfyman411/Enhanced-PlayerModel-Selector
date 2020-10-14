@@ -1,16 +1,16 @@
 {
-    "description": "Description",
-    "ignore": [
-        "*.psd",
-        "*.vcproj",
-        "*.svn*",
-        "*.git*"
-    ],
-    "tags": [
-        "roleplay",
-        "scenic"
-    ],
-    "title": "Enhanced PlayerModel Selector",
-    "type": "tool",
-    "workshopid": 504945881.0
+	"title" :	"Enhanced PlayerModel Selector Fesiug's Edit",
+	"type"  :	"tool",
+	"tags"  :	[],
+	"ignore":
+	[
+		"*.cmd",
+		"*.ini",
+		"*.lnk",
+		"*.url",
+		".gitattributes",
+		".gitignore",
+		"enhanced_playermodel_selector.jpg",
+		"enhanced_playermodel_selector.pdn"
+	]
 }
