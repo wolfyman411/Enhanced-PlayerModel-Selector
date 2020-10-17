@@ -351,7 +351,7 @@ end
 if CLIENT then
 
 
-local Version = "3.3 (Edit 2)"
+local Version = "3.3 (Edit 3)"
 local Menu = { }
 local Frame
 local default_animations = { "idle_all_01", "menu_walk", "pose_standing_02", "pose_standing_03", "idle_fist" }
@@ -547,8 +547,8 @@ function Menu.Setup()
 	Menu.AdvButton:SetPos( fw - 200, 3 )
 	Menu.AdvButton:SetText( "Visit Addon Page" )
 	Menu.AdvButton.DoClick = function()
-		gui.OpenURL( "http://steamcommunity.com/sharedfiles/filedetails/?id=504945881" )
-		SetClipboardText( "http://steamcommunity.com/sharedfiles/filedetails/?id=504945881" )
+		gui.OpenURL( "http://steamcommunity.com/sharedfiles/filedetails/?id=2257795841" )
+		SetClipboardText( "http://steamcommunity.com/sharedfiles/filedetails/?id=2257795841" )
 	end
 	
 	Menu.ApplyButton = Frame:Add( "DButton" )
