@@ -557,8 +557,6 @@ function Menu.Setup()
 	Menu.Right:SetSize( 430, 0 )
 
 	Menu.Right.OnActiveTabChanged = function( self, oldTab, newTab )
-		Menu.IsHandsTabActive = newTab.IsHandsTab
-
 		timer.Simple( 0, function() Menu.UpdateFromConvars() end )
 	end
 		
@@ -1465,7 +1463,7 @@ function Menu.Setup()
 	-- Updating
 
 	function Menu.UpdateBodyGroups( pnl, val )
-		local handsTabActive = Menu.IsHandsTabActive
+		local handsTabActive = Menu.IsHandsTabActive()
 
 		if ( pnl.type == "bgroup" ) then
 
@@ -1585,7 +1583,7 @@ function Menu.Setup()
 	end
 	
 	function Menu.UpdateFromConvars()
-		if ( Menu.IsHandsTabActive ) then
+		if ( Menu.IsHandsTabActive() ) then
 			local model = LocalPlayer():GetInfo( "cl_playerhands" )
 
 			if ( model == "" ) then
@@ -1648,7 +1646,7 @@ function Menu.Setup()
 	function mdl:DragMouseRelease() self.Pressed = false end
 
 	function mdl:RunAnimation() -- override to restart hands animation
-		if ( Menu.IsHandsTabActive and self.Entity:GetCycle() > 0.99 ) then
+		if ( Menu.IsHandsTabActive() and self.Entity:GetCycle() > 0.99 ) then
 			self.Entity:SetCycle( 0 )
 		end
 
@@ -1660,7 +1658,7 @@ function Menu.Setup()
 	function mdl:LayoutEntity( Entity )
 		if ( self.bAnimated ) then self:RunAnimation() end
 
-		if ( Menu.IsHandsTabActive ) then
+		if ( Menu.IsHandsTabActive() ) then
 			self.WasHandsTab = true
 
 			self:SetFOV( 65 )
@@ -1711,6 +1709,12 @@ function Menu.Setup()
 		Entity:SetPos( self.Pos )
 	end
 
+end
+
+function Menu.IsHandsTabActive()
+	if not IsValid(Menu.Right) then return false end
+
+	return Menu.Right:GetActiveTab().IsHandsTab
 end
 
 function Menu.Toggle()
