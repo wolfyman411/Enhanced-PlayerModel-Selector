@@ -555,7 +555,12 @@ function Menu.Setup()
 	Menu.Right = Frame:Add( "DPropertySheet" )
 	Menu.Right:Dock( RIGHT )
 	Menu.Right:SetSize( 430, 0 )
-		
+
+	Menu.Right.OnActiveTabChanged = function( self, oldTab, newTab )
+		Menu.IsHandsTabActive = newTab.IsHandsTab
+
+		timer.Simple( 0, function() Menu.UpdateFromConvars() end )
+	end
 		
 		local modeltab = Menu.Right:Add( "DPropertySheet" )
 		Menu.Right:AddSheet( "Model", modeltab, "icon16/user.png" )
@@ -654,8 +659,10 @@ function Menu.Setup()
 			Menu.ModelPopulate()
 			
 -------------------------------------------------------------
-		local handtab = Menu.Right:Add( "DPropertySheet" )	
-		Menu.Right:AddSheet( "Hands", handtab, "icon16/attach.png" )		
+		local handtab = Menu.Right:Add( "DPropertySheet" )
+		local htb = Menu.Right:AddSheet( "Hands", handtab, "icon16/attach.png" )
+
+		htb.Tab.IsHandsTab = true
 		
 		local t = handtab:Add( "DLabel" )
 			t:SetPos( 129, 1 )
@@ -1431,6 +1438,12 @@ function Menu.Setup()
 		return string.Implode( " ", newname )
 	end
 
+	function Menu.PlayHandsPreviewAnimation( panel, playermodel )
+		local iSeq = panel.Entity:LookupSequence( "seq_admire" )
+
+		if ( iSeq > 0 ) then panel.Entity:ResetSequence( iSeq ) end
+	end
+
 	function Menu.PlayPreviewAnimation( panel, playermodel )
 
 		if ( !panel or !IsValid( panel.Entity ) ) then return end
@@ -1451,9 +1464,11 @@ function Menu.Setup()
 	-- Updating
 
 	function Menu.UpdateBodyGroups( pnl, val )
+		local handsTabActive = Menu.IsHandsTabActive
+
 		if ( pnl.type == "bgroup" ) then
 
-			mdl.Entity:SetBodygroup( pnl.typenum, math.Round( val ) )
+			if ( not handsTabActive ) then mdl.Entity:SetBodygroup( pnl.typenum, math.Round( val ) ) end
 
 			local str = string.Explode( " ", GetConVar( "cl_playerbodygroups" ):GetString() )
 			if ( #str < pnl.typenum + 1 ) then for i = 1, pnl.typenum + 1 do str[ i ] = str[ i ] or 0 end end
@@ -1462,7 +1477,7 @@ function Menu.Setup()
 		
 		elseif ( pnl.type == "flex" ) then
 
-			mdl.Entity:SetFlexWeight( pnl.typenum, math.Round( val, 2 ) )
+			if ( not handsTabActive ) then mdl.Entity:SetFlexWeight( pnl.typenum, math.Round( val, 2 ) ) end
 
 			local str = string.Explode( " ", GetConVar( "cl_playerflexes" ):GetString() )
 			if ( #str < pnl.typenum + 1 ) then for i = 1, pnl.typenum + 1 do str[ i ] = str[ i ] or 0 end end
@@ -1471,7 +1486,7 @@ function Menu.Setup()
 		
 		elseif ( pnl.type == "skin" ) then
 
-			mdl.Entity:SetSkin( math.Round( val ) )
+			if ( not handsTabActive ) then mdl.Entity:SetSkin( math.Round( val ) ) end
 			RunConsoleCommand( "cl_playerskin", math.Round( val ) )
 
 		end
@@ -1569,6 +1584,26 @@ function Menu.Setup()
 	end
 	
 	function Menu.UpdateFromConvars()
+		if ( Menu.IsHandsTabActive ) then
+			local model = LocalPlayer():GetInfo( "cl_playerhands" )
+
+			if ( model == "" ) then
+				model = LocalPlayer():GetInfo( "cl_playermodel" )
+			end
+
+			local mdlhands = player_manager.TranslatePlayerHands( model )
+
+			util.PrecacheModel( mdlhands.model )
+			mdl:SetModel( mdlhands.model )
+
+			mdl.Entity:SetSkin( mdlhands.skin )
+			mdl.Entity:SetBodyGroups( mdlhands.body )
+			mdl.Entity.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
+
+			Menu.PlayHandsPreviewAnimation( mdl, model )
+
+			return
+		end
 
 		local model = LocalPlayer():GetInfo( "cl_playermodel" )
 		local modelname = player_manager.TranslatePlayerModel( model )
@@ -1611,8 +1646,39 @@ function Menu.Setup()
 
 	function mdl:DragMouseRelease() self.Pressed = false end
 
+	function mdl:RunAnimation() -- override to restart hands animation
+		if ( Menu.IsHandsTabActive and self.Entity:GetCycle() > 0.99 ) then
+			self.Entity:SetCycle( 0 )
+		end
+
+		self.Entity:FrameAdvance( ( RealTime() - self.LastPaint ) * self.m_fAnimSpeed )
+	end
+
+	local handsang = Angle( 0, 180, 0 )
+
 	function mdl:LayoutEntity( Entity )
 		if ( self.bAnimated ) then self:RunAnimation() end
+
+		if ( Menu.IsHandsTabActive ) then
+			self.WasHandsTab = true
+
+			self:SetFOV( 65 )
+
+			self.Angles = handsang
+			self.Pos = vector_origin
+
+			Entity:SetAngles( self.Angles )
+			Entity:SetPos( self.Pos )
+
+			return
+		elseif ( self.WasHandsTab ) then -- reset position on tab switch
+			self.WasHandsTab = false
+
+			self:SetFOV( 36 )
+
+			self.Pos = Vector( -100, 0, -61 )
+			self.Angles = Angle( 0, 0, 0 )
+		end
 
 		if ( self.Pressed == MOUSE_LEFT ) then
 			local mx, my = gui.MousePos()
