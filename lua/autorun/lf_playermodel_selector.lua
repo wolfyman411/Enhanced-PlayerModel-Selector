@@ -281,14 +281,12 @@ end )
 
 hook.Add( "PlayerSetHandsModel", "lf_fe_hands_select2", function( ply, ent )
 	if ply:GetInfo( "cl_playerhands" ) and ply:GetInfo( "cl_playerhands" ) != "" then
-		if ent then
-			local info = player_manager.TranslatePlayerHands(ply:GetInfo( "cl_playerhands" ))
-		
-			timer.Simple(0.2, function()
-				ent:SetModel( info.model )
-				ent:SetSkin( info.skin )
-				ent:SetBodyGroups( info.body )
-			end)
+		local info = player_manager.TranslatePlayerHands( ply:GetInfo( "cl_playerhands" ) )
+
+		if ( info ) then
+			ent:SetModel( info.model )
+			ent:SetSkin( info.skin )
+			ent:SetBodyGroups( info.body )
 		end
 	end
 end )
