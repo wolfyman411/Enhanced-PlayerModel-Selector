@@ -522,10 +522,25 @@ function Menu.Setup()
 	mdl:SetAnimated( true )
 	mdl:SetLookAt( Vector( -100, 0, -22 ) )
 	function mdl.DefaultPos()
+		if ( Menu.IsHandsTabActive() ) then return end
+
 		mdl.Angles = Angle( 0, 0, 0 )
 		mdl.Pos = Vector( -100, 0, -61 )
 	end
 	mdl.DefaultPos()
+
+	function mdl:PreDrawModel( mdlEnt )
+		if ( IsValid( self.EntityHands ) and Menu.IsHandsTabActive() ) then
+			if ( not self.EntityHands:IsEffectActive( EF_BONEMERGE ) ) then
+				self.EntityHands:AddEffects( EF_BONEMERGE )
+				self.EntityHands:AddEffects( EF_BONEMERGE_FASTCULL )
+			end
+
+			self.EntityHands:DrawModel()
+
+			return false
+		end
+	end
 
 	Menu.AdvButton = Frame:Add( "DButton" )
 	Menu.AdvButton:SetSize( 100, 18 )
@@ -1580,8 +1595,16 @@ function Menu.Setup()
 		Menu.Right:InvalidateLayout( true )
 	end
 	
+	local handsAnimModel = Model( "models/weapons/c_arms_combine.mdl" )
+
 	function Menu.UpdateFromConvars()
+		if ( IsValid( mdl.EntityHands ) ) then
+			mdl.EntityHands:Remove()
+		end
+
 		if ( Menu.IsHandsTabActive() ) then
+			mdl:SetModel( handsAnimModel )
+
 			local model = LocalPlayer():GetInfo( "cl_playerhands" )
 
 			if ( model == "" ) then
@@ -1591,11 +1614,13 @@ function Menu.Setup()
 			local mdlhands = player_manager.TranslatePlayerHands( model )
 
 			util.PrecacheModel( mdlhands.model )
-			mdl:SetModel( mdlhands.model )
 
-			mdl.Entity:SetSkin( mdlhands.skin )
-			mdl.Entity:SetBodyGroups( mdlhands.body )
-			mdl.Entity.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
+			mdl.EntityHands = ClientsideModel( mdlhands.model, RENDERGROUP_OTHER )
+			mdl.EntityHands:SetParent( mdl.Entity )
+
+			mdl.EntityHands:SetSkin( mdlhands.skin )
+			mdl.EntityHands:SetBodyGroups( mdlhands.body )
+			mdl.EntityHands.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
 
 			Menu.PlayHandsPreviewAnimation( mdl, model )
 
