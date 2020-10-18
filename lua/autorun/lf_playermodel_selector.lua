@@ -1617,6 +1617,7 @@ function Menu.Setup()
 
 			mdl.EntityHands = ClientsideModel( mdlhands.model, RENDERGROUP_OTHER )
 			mdl.EntityHands:SetParent( mdl.Entity )
+			mdl.EntityHands:SetNoDraw( true )
 
 			mdl.EntityHands:SetSkin( mdlhands.skin )
 			mdl.EntityHands:SetBodyGroups( mdlhands.body )
