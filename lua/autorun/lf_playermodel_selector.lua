@@ -680,11 +680,11 @@ function Menu.Setup()
 			--t:SetSize( 100, 20 )
 			t:SetText( "Search:" )
 			
-			Menu.ModelFilter = handtab:Add( "DTextEntry" )
-			Menu.ModelFilter:SetPos( 168, 1 )
-			Menu.ModelFilter:SetSize( 246, 20 )
-			Menu.ModelFilter:SetUpdateOnType( true )
-			Menu.ModelFilter.OnValueChange = function() Menu.ModelPopulate() end
+			Menu.HandsFilter = handtab:Add( "DTextEntry" )
+			Menu.HandsFilter:SetPos( 168, 1 )
+			Menu.HandsFilter:SetSize( 246, 20 )
+			Menu.HandsFilter:SetUpdateOnType( true )
+			Menu.HandsFilter.OnValueChange = function() Menu.HandsPopulate() end
 			
 			local ModelScroll = handtab:Add( "DScrollPanel" )
 			handtab:AddSheet( "Icons", ModelScroll, "icon16/application_view_tile.png" )
@@ -718,12 +718,12 @@ function Menu.Setup()
 			--AllModels["AbsolutelyNone"] = ""
 			--PrintTable(AllModels)
 			
-			function Menu.ModelPopulate()
+			function Menu.HandsPopulate()
 				
 				ModelIconLayout:Clear()
 				ModelList:Clear()
 				
-				local ModelFilter = Menu.ModelFilter:GetValue() or nil
+				local ModelFilter = Menu.HandsFilter:GetValue() or nil
 				
 				local function IsInFilter( name )
 					if not ModelFilter or ModelFilter == "" then
@@ -775,7 +775,7 @@ function Menu.Setup()
 				
 			end
 			
-			Menu.ModelPopulate()
+			Menu.HandsPopulate()
 --------------------------------------------------------
 		
 		local favorites = Menu.Right:Add( "DPanel" )
