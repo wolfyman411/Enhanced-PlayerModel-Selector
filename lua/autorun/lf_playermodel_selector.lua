@@ -1624,7 +1624,7 @@ function Menu.Setup()
 		end
 
 		-- Hands
-		if ( IsValid( mdl.EntityHands ) ) then
+		if GetConVar( "cl_playerhands" ):GetString() and GetConVar( "cl_playerhands" ):GetString() != "" and ( IsValid( mdl.EntityHands ) ) then
 			local nskins = mdl.EntityHands:SkinCount() - 1
 			if ( nskins > 0 ) then
 				local skins = vgui.Create( "DNumSlider" )
