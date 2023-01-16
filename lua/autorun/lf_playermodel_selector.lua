@@ -620,6 +620,9 @@ function Menu.Setup()
 				RunConsoleCommand( "cl_playerbodygroups", "0" )
 				RunConsoleCommand( "cl_playerskin", "0" )
 				RunConsoleCommand( "cl_playerflexes", "0" )
+				-- RunConsoleCommand( "cl_playerhands", "" )
+				RunConsoleCommand( "cl_playerhandsbodygroups", "0" )
+				RunConsoleCommand( "cl_playerhandsskin", "0" )
 				timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 			end
 			
@@ -661,6 +664,9 @@ function Menu.Setup()
 							RunConsoleCommand( "cl_playerbodygroups", "0" )
 							RunConsoleCommand( "cl_playerskin", "0" )
 							RunConsoleCommand( "cl_playerflexes", "0" )
+							-- RunConsoleCommand( "cl_playerhands", "" )
+							RunConsoleCommand( "cl_playerhandsbodygroups", "0" )
+							RunConsoleCommand( "cl_playerhandsskin", "0" )
 							timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 						end
 						
@@ -752,6 +758,8 @@ function Menu.Setup()
 						table.insert( modelicons, icon )
 						icon.DoClick = function()
 							RunConsoleCommand( "cl_playerhands", "" )
+							RunConsoleCommand( "cl_playerhandsbodygroups", "0" )
+							RunConsoleCommand( "cl_playerhandsskin", "0" )
 							timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 						end
 						
@@ -769,6 +777,8 @@ function Menu.Setup()
 						table.insert( modelicons, icon )
 						icon.DoClick = function()
 							RunConsoleCommand( "cl_playerhands", name )
+							RunConsoleCommand( "cl_playerhandsbodygroups", "0" )
+							RunConsoleCommand( "cl_playerhandsskin", "0" )
 							timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 						end
 						
@@ -904,6 +914,17 @@ function Menu.Setup()
 		local bdcontrolspanel = bdcontrols:Add( "DPanelList" )
 		bdcontrolspanel:EnableVerticalScrollbar( true )
 		bdcontrolspanel:Dock( FILL )
+		
+		-- Hands
+		local h__bdcontrols = Menu.Right:Add( "DPanel" )
+		local h__bgtab = Menu.Right:AddSheet( "Handgroups", h__bdcontrols, "icon16/group_link.png" )
+		h__bdcontrols:DockPadding( 8, 8, 8, 8 )
+
+		h__bgtab.Tab.IsHandsTab = true
+
+		local h__bdcontrolspanel = h__bdcontrols:Add( "DPanelList" )
+		h__bdcontrolspanel:EnableVerticalScrollbar( true )
+		h__bdcontrolspanel:Dock( FILL )
 		
 		
 		local flexcontrols = Menu.Right:Add( "DPanel" )
@@ -1513,6 +1534,9 @@ function Menu.Setup()
 		bdcontrolspanel:Clear()
 		flexcontrolspanel:Clear()
 		
+		h__bdcontrolspanel:Clear()
+
+		
 		bgtab.Tab:SetVisible( false )
 		flextab.Tab:SetVisible( false )
 
@@ -1558,6 +1582,54 @@ function Menu.Setup()
 			
 			bgtab.Tab:SetVisible( true )
 		end
+
+		-- Hands
+		if ( IsValid( mdl.EntityHands ) ) then
+			print("run")
+			local nskins = mdl.EntityHands:SkinCount() - 1
+			if ( nskins > 0 ) then
+				local skins = vgui.Create( "DNumSlider" )
+				skins:Dock( TOP )
+				skins:SetText( "Skin" )
+				skins:SetDark( true )
+				skins:SetTall( 50 )
+				skins:SetDecimals( 0 )
+				skins:SetMax( nskins )
+				skins:SetValue( GetConVar( "cl_playerhandsskin" ):GetInt() )
+				skins.type = "skin"
+				skins.OnValueChanged = Menu.UpdateBodyGroups
+				
+				h__bdcontrolspanel:AddItem( skins )
+
+				mdl.EntityHands:SetSkin( GetConVar( "cl_playerhandsskin" ):GetInt() )
+				
+				h__bgtab.Tab:SetVisible( true )
+			end
+
+			local groups = string.Explode( " ", GetConVar( "cl_playerhandsbodygroups" ):GetString() )
+			for k = 0, mdl.EntityHands:GetNumBodyGroups() - 1 do
+				if ( mdl.EntityHands:GetBodygroupCount( k ) <= 1 ) then continue end
+
+				local bgroup = vgui.Create( "DNumSlider" )
+				bgroup:Dock( TOP )
+				bgroup:SetText( Menu.MakeNiceName( mdl.EntityHands:GetBodygroupName( k ) ) )
+				bgroup:SetDark( true )
+				bgroup:SetTall( 50 )
+				bgroup:SetDecimals( 0 )
+				bgroup.type = "bgroup"
+				bgroup.typenum = k
+				bgroup:SetMax( mdl.EntityHands:GetBodygroupCount( k ) - 1 )
+				bgroup:SetValue( groups[ k + 1 ] or 0 )
+				bgroup.OnValueChanged = Menu.UpdateBodyGroups
+				
+				h__bdcontrolspanel:AddItem( bgroup )
+
+				mdl.EntityHands:SetBodygroup( k, groups[ k + 1 ] or 0 )
+				
+				h__bgtab.Tab:SetVisible( true )
+			end
+		end
+		-- Hands end
 		
 		if GetConVar( "sv_playermodel_selector_flexes" ):GetBool() and GetConVar( "cl_playermodel_selector_unlockflexes" ):GetBool() then
 			local t = vgui.Create( "DLabel" )
