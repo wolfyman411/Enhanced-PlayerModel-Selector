@@ -722,6 +722,8 @@ function Menu.Setup()
 				if !sel[1] then return end
 				local name = tostring( sel[1]:GetValue(1) )
 				RunConsoleCommand( "cl_playerhands", name )
+				RunConsoleCommand( "cl_playerhandsbodygroups", "0" )
+				RunConsoleCommand( "cl_playerhandsskin", "0" )
 				timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 			end
 			
@@ -1527,6 +1529,20 @@ function Menu.Setup()
 			if ( not handsTabActive ) then mdl.Entity:SetSkin( math.Round( val ) ) end
 			RunConsoleCommand( "cl_playerskin", math.Round( val ) )
 
+		elseif ( pnl.type == "h__bgroup" ) then
+
+			if ( handsTabActive ) then mdl.EntityHands:SetBodygroup( pnl.typenum, math.Round( val ) ) end
+
+			local str = string.Explode( " ", GetConVar( "cl_playerhandsbodygroups" ):GetString() )
+			if ( #str < pnl.typenum + 1 ) then for i = 1, pnl.typenum + 1 do str[ i ] = str[ i ] or 0 end end
+			str[ pnl.typenum + 1 ] = math.Round( val )
+			RunConsoleCommand( "cl_playerhandsbodygroups", table.concat( str, " " ) )
+		
+		elseif ( pnl.type == "h__skin" ) then
+
+			if ( handsTabActive ) then mdl.EntityHands:SetSkin( math.Round( val ) ) end
+			RunConsoleCommand( "cl_playerhandsskin", math.Round( val ) )
+
 		end
 	end
 
@@ -1540,6 +1556,7 @@ function Menu.Setup()
 		bgtab.Tab:SetVisible( false )
 		flextab.Tab:SetVisible( false )
 
+		print("roog", CurTime())
 		local nskins = mdl.Entity:SkinCount() - 1
 		if ( nskins > 0 ) then
 			local skins = vgui.Create( "DNumSlider" )
@@ -1585,7 +1602,7 @@ function Menu.Setup()
 
 		-- Hands
 		if ( IsValid( mdl.EntityHands ) and Menu.IsHandsTabActive() ) then
-			print("run")
+			print("run", CurTime())
 			local nskins = mdl.EntityHands:SkinCount() - 1
 			if ( nskins > 0 ) then
 				local skins = vgui.Create( "DNumSlider" )
@@ -1596,7 +1613,7 @@ function Menu.Setup()
 				skins:SetDecimals( 0 )
 				skins:SetMax( nskins )
 				skins:SetValue( GetConVar( "cl_playerhandsskin" ):GetInt() )
-				skins.type = "skin"
+				skins.type = "h__skin"
 				skins.OnValueChanged = Menu.UpdateBodyGroups
 				
 				h__bdcontrolspanel:AddItem( skins )
@@ -1616,7 +1633,7 @@ function Menu.Setup()
 				bgroup:SetDark( true )
 				bgroup:SetTall( 50 )
 				bgroup:SetDecimals( 0 )
-				bgroup.type = "bgroup"
+				bgroup.type = "h__bgroup"
 				bgroup.typenum = k
 				bgroup:SetMax( mdl.EntityHands:GetBodygroupCount( k ) - 1 )
 				bgroup:SetValue( groups[ k + 1 ] or 0 )
@@ -1701,7 +1718,7 @@ function Menu.Setup()
 			mdl.EntityHands.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
 
 			Menu.PlayHandsPreviewAnimation( mdl, model )
-
+			Menu.RebuildBodygroupTab()
 			return
 		end
 
