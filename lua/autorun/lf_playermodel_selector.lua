@@ -1584,7 +1584,7 @@ function Menu.Setup()
 		end
 
 		-- Hands
-		if ( IsValid( mdl.EntityHands ) ) then
+		if ( IsValid( mdl.EntityHands ) and Menu.IsHandsTabActive() ) then
 			print("run")
 			local nskins = mdl.EntityHands:SkinCount() - 1
 			if ( nskins > 0 ) then
