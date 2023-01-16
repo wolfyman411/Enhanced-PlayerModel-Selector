@@ -1817,8 +1817,10 @@ function Menu.Setup()
 			self.Angles = handsang
 			self.Pos = vector_origin
 
-			Entity:SetAngles( self.Angles )
-			Entity:SetPos( self.Pos )
+			self.EntityHandsAnim:SetAngles( self.Angles )
+			self.EntityHandsAnim:SetPos( self.Pos )
+
+			self.EntityHandsAnim:SetCycle( math.Remap((CurTime()/3) % 1, 0, 1, 0.05, 0.95) )
 
 			return
 		elseif ( self.WasHandsTab ) then -- reset position on tab switch
