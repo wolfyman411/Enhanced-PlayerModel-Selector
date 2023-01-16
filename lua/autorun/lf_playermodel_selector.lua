@@ -1580,7 +1580,6 @@ function Menu.Setup()
 		h__bgtab.Tab:SetVisible( false )
 		flextab.Tab:SetVisible( false )
 
-		print("roog", CurTime())
 		local nskins = mdl.Entity:SkinCount() - 1
 		if ( nskins > 0 ) then
 			local skins = vgui.Create( "DNumSlider" )
@@ -1626,7 +1625,6 @@ function Menu.Setup()
 
 		-- Hands
 		if ( IsValid( mdl.EntityHands ) ) then
-			print("run", CurTime())
 			local nskins = mdl.EntityHands:SkinCount() - 1
 			if ( nskins > 0 ) then
 				local skins = vgui.Create( "DNumSlider" )
@@ -1806,8 +1804,6 @@ function Menu.Setup()
 
 	function mdl:LayoutEntity( Entity )
 		if ( self.bAnimated ) then self:RunAnimation() end
-
-		print("Fuck fuck fukc fuck fuck", CurTime() )
 
 		if ( Menu.IsHandsTabActive() ) then
 			self.WasHandsTab = true
