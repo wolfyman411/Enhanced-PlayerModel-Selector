@@ -1740,7 +1740,12 @@ function Menu.Setup()
 			mdl.EntityHands:SetParent( mdl.EntityHandsAnim )
 			mdl.EntityHands:SetNoDraw( true )
 
-			mdl.EntityHands:SetSkin( mdlhands.skin )
+			local dumbassproof = mdlhands.skin
+			if !isnumber( dumbassproof ) then
+				dumbassproof = 0
+			end
+
+			mdl.EntityHands:SetSkin( dumbassproof )
 			mdl.EntityHands:SetBodyGroups( mdlhands.body )
 			mdl.EntityHands.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
 
