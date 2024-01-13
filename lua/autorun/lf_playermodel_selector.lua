@@ -383,7 +383,8 @@ if CLIENT then
 local Version = "3.3, Fesiug's Edit"
 local Menu = { }
 local Frame
-local default_animations = { "idle_all_01", "menu_walk", "pose_standing_02", "pose_standing_03", "idle_fist" }
+local default_animations = { "idle_all_01", "menu_walk", "menu_combine", "pose_standing_02", "pose_standing_03", "idle_fist", "menu_gman", "idle_all_scared", "menu_zombie_01", "idle_magic", "walk_ar2" }
+local currentanim = 0
 local Favorites = { }
 --local addon_vox = false
 
@@ -404,6 +405,23 @@ if file.Exists( "lf_playermodel_selector/cl_favorites.txt", "DATA" ) then
 		end
 		loaded = nil
 	end
+end
+
+local function RRRotateAroundPoint(pos, ang, point, offset_ang)
+    local mat = Matrix()
+    mat:SetTranslation(pos)
+    mat:SetAngles(ang)
+    mat:Translate(point)
+
+    local rot_mat = Matrix()
+    rot_mat:SetAngles(offset_ang)
+    rot_mat:Invert()
+
+    mat:Mul(rot_mat)
+
+    mat:Translate(-point)
+
+    return mat:GetTranslation(), mat:GetAngles()
 end
 
 
@@ -556,6 +574,7 @@ function Menu.Setup()
 
 		mdl.Angles = Angle( 0, 0, 0 )
 		mdl.Pos = Vector( -100, 0, -61 )
+		mdl.AngleOffset = Angle( 0, 0, 0 )
 	end
 	mdl.DefaultPos()
 
@@ -593,7 +612,15 @@ function Menu.Setup()
 	Menu.ResetButton:SetPos( 5, fh - 25 )
 	Menu.ResetButton:SetText( "Reset" )
 	Menu.ResetButton.DoClick = mdl.DefaultPos
-	
+
+	Menu.ResetButton = Frame:Add( "DButton" )
+	Menu.ResetButton:SetSize( 60, 20 )
+	Menu.ResetButton:SetPos( 55, fh - 25 )
+	Menu.ResetButton:SetText( "Next anim" )
+	Menu.ResetButton.DoClick = function()
+		currentanim = (currentanim + 1) % (#default_animations)
+		Menu.PlayPreviewAnimation( mdl, LocalPlayer():GetInfo( "cl_playermodel" ) )
+	end
 	
 	Menu.Right = Frame:Add( "DPropertySheet" )
 	Menu.Right:Dock( RIGHT )
@@ -1504,7 +1531,7 @@ function Menu.Setup()
 	end
 
 	function Menu.PlayHandsPreviewAnimation( panel, playermodel )
-		local iSeq = panel.EntityHandsAnim:LookupSequence( "seq_admire" )
+		local iSeq = panel.EntityHandsAnim:LookupSequence( "idle" )
 
 		if ( iSeq > 0 ) then panel.EntityHandsAnim:ResetSequence( iSeq ) end
 	end
@@ -1513,13 +1540,13 @@ function Menu.Setup()
 
 		if ( !panel or !IsValid( panel.Entity ) ) then return end
 
-		local anims = list.Get( "PlayerOptionsAnimations" )
+		-- local anims = list.Get( "PlayerOptionsAnimations" )
 
-		local anim = default_animations[ math.random( 1, #default_animations ) ]
-		if ( anims[ playermodel ] ) then
-			anims = anims[ playermodel ]
-			anim = anims[ math.random( 1, #anims ) ]
-		end
+		local anim = default_animations[ currentanim+1 ]
+		-- if ( anims[ playermodel ] ) then
+		-- 	anims = anims[ playermodel ]
+		-- 	anim = anims[ math.random( 1, #anims ) ]
+		-- end
 
 		local iSeq = panel.Entity:LookupSequence( anim )
 		if ( iSeq > 0 ) then panel.Entity:ResetSequence( iSeq ) end
@@ -1711,7 +1738,7 @@ function Menu.Setup()
 		Menu.Right:InvalidateLayout( true )
 	end
 	
-	local handsAnimModel = Model( "models/weapons/c_arms_combine.mdl" )
+	local handsAnimModel = Model( "models/weapons/chand_checker.mdl" )
 
 	function Menu.UpdateFromConvars()
 		if ( IsValid( mdl.EntityHands ) ) then
@@ -1722,7 +1749,7 @@ function Menu.Setup()
 		end
 		mdl.EntityHandsAnim = ClientsideModel( handsAnimModel, RENDERGROUP_OTHER )
 		mdl.EntityHandsAnim:SetNoDraw( true )
-		mdl.EntityHandsAnim:SetPos( Vector( -100, 0, -61 ) )
+		mdl.EntityHandsAnim:SetPos( Vector( 0, 0, 0 ) )
 
 		if true or ( Menu.IsHandsTabActive() ) then
 			mdl:SetModel( handsAnimModel )
@@ -1791,7 +1818,7 @@ function Menu.Setup()
 	end
 	
 	function mdl:OnMouseWheeled( delta )
-		self.WheelD = delta * -10
+		self.WheelD = delta * -5
 		self.Wheeled = true
 	end
 
@@ -1806,6 +1833,7 @@ function Menu.Setup()
 	end
 
 	local handsang = Angle( 0, 180, 0 )
+	local handspos = Vector( -2, 0, -2 )
 
 	function mdl:LayoutEntity( Entity )
 		if ( self.bAnimated ) then self:RunAnimation() end
@@ -1813,15 +1841,15 @@ function Menu.Setup()
 		if ( Menu.IsHandsTabActive() ) then
 			self.WasHandsTab = true
 
-			self:SetFOV( 65 )
+			self:SetFOV( 45 )
 
 			self.Angles = handsang
-			self.Pos = vector_origin
+			self.Pos = handspos
 
 			self.EntityHandsAnim:SetAngles( self.Angles )
 			self.EntityHandsAnim:SetPos( self.Pos )
 
-			self.EntityHandsAnim:SetCycle( math.Remap((CurTime()/3) % 1, 0, 1, 0.05, 0.95) )
+			self.EntityHandsAnim:SetCycle( math.Remap((CurTime()/8) % 1, 0, 1, 0.01, 0.99) )
 
 			return
 		elseif ( self.WasHandsTab ) then -- reset position on tab switch
@@ -1831,6 +1859,7 @@ function Menu.Setup()
 
 			self.Pos = Vector( -100, 0, -61 )
 			self.Angles = Angle( 0, 0, 0 )
+			self.AngleOffset = Angle( 0, 0, 0 )
 		end
 
 		if ( self.Pressed == MOUSE_LEFT ) then
@@ -1842,14 +1871,15 @@ function Menu.Setup()
 		
 		if ( self.Pressed == MOUSE_RIGHT ) then
 			local mx, my = gui.MousePos()
-			self.Angles = self.Angles - Angle( ( self.PressY*(0.5) or my*(0.5) ) - my*(0.5), 0, ( self.PressX*(-0.5) or mx*(-0.5) ) - mx*(-0.5) )
-			
+			self.AngleOffset = Angle( ( self.PressY*(0.15) or my*(0.15) ) - my*(0.15), 0, ( self.PressX*(-0.15) or mx*(-0.15) ) - mx*(-0.15) )
+			self.Pos, self.Angles = RRRotateAroundPoint(self.Pos, self.Angles, Vector(0, 0, self.Pos.z * -0.5), self.AngleOffset)
+
 			self.PressX, self.PressY = gui.MousePos()
 		end
 		
 		if ( self.Pressed == MOUSE_MIDDLE ) then
 			local mx, my = gui.MousePos()
-			self.Pos = self.Pos - Vector( 0, ( self.PressX*(0.5) or mx*(0.5) ) - mx*(0.5), ( self.PressY*(-0.5) or my*(-0.5) ) - my*(-0.5) )
+			self.Pos = self.Pos - Vector( 0, ( self.PressX*(0.15) or mx*(0.15) ) - mx*(0.15), ( self.PressY*(-0.15) or my*(-0.15) ) - my*(-0.15) )
 			
 			self.PressX, self.PressY = gui.MousePos()
 		end
