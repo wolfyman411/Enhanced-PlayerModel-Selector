@@ -1,5 +1,5 @@
 -- Enhanced PlayerModel Selector
--- Upgraded code by LibertyForce http://steamcommunity.com/id/libertyforce
+-- Upgraded code by LibertyForce https://steamcommunity.com/id/libertyforce
 -- Based on: https://github.com/garrynewman/garrysmod/blob/1a2c317eeeef691e923453018236cf9f66ee74b4/garrysmod/gamemodes/sandbox/gamemode/editor_player.lua
 
 
@@ -596,8 +596,8 @@ function Menu.Setup()
 	Menu.AdvButton:SetPos( fw - 200, 3 )
 	Menu.AdvButton:SetText( "Visit Addon Page" )
 	Menu.AdvButton.DoClick = function()
-		gui.OpenURL( "http://steamcommunity.com/sharedfiles/filedetails/?id=2257795841" )
-		SetClipboardText( "http://steamcommunity.com/sharedfiles/filedetails/?id=2257795841" )
+		gui.OpenURL( "https://steamcommunity.com/sharedfiles/filedetails/?id=2257795841" )
+		SetClipboardText( "https://steamcommunity.com/sharedfiles/filedetails/?id=2257795841" )
 	end
 	
 	Menu.ApplyButton = Frame:Add( "DButton" )
@@ -759,7 +759,7 @@ function Menu.Setup()
 			ModelIconLayout:SetSpaceY( 2 )
 			ModelIconLayout:Dock( FILL )
 			
-			local modelicons = { }
+			local modelicons_forhands = { }
 			
 			
 			local ModelList = handtab:Add( "DListView" )
@@ -784,7 +784,6 @@ function Menu.Setup()
 			--PrintTable(AllModels)
 			
 			function Menu.HandsPopulate()
-				
 				ModelIconLayout:Clear()
 				ModelList:Clear()
 				
@@ -804,44 +803,110 @@ function Menu.Setup()
 					end
 				end
 				
-						local icon = ModelIconLayout:Add( "SpawnIcon" )
-						icon:SetSize( 64, 64 )
-						icon:SetSpawnIcon( "icon64/playermodel.png" )
-						--icon:SetModel( model )
-						icon:SetTooltip( "Use playermodel" )
-						table.insert( modelicons, icon )
-						icon.DoClick = function()
-							RunConsoleCommand( "cl_playerhands", "" )
-							RunConsoleCommand( "cl_playerhandsbodygroups", "0" )
-							RunConsoleCommand( "cl_playerhandsskin", "0" )
-							timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
-						end
-						
-						ModelList:AddLine( name, model )
+				local icon = ModelIconLayout:Add( "SpawnIcon" )
+				icon:SetSize( 64, 64 )
+				icon:SetSpawnIcon( "icon64/playermodel.png" )
+				--icon:SetModel( model )
+				icon:SetTooltip( "Use playermodel" )
+				icon.DoClick = function()
+					RunConsoleCommand( "cl_playerhands", "" )
+					RunConsoleCommand( "cl_playerhandsbodygroups", "0" )
+					RunConsoleCommand( "cl_playerhandsskin", "0" )
+					timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
+				end
+				
+				ModelList:AddLine( name, model )
+
+				local exister = {}
 				
 				for name, model in SortedPairs( AllModels ) do
-					
 					if IsInFilter( name ) then
-					
+						local result = player_manager.TranslatePlayerHands( name )
+						if exister[result.model:lower()] then
+							continue
+						else
+							exister[result.model:lower()] = true
+						end
 						local icon = ModelIconLayout:Add( "SpawnIcon" )
 						icon:SetSize( 64, 64 )
 						--icon:InvalidateLayout( true )
-						icon:SetModel( model )
-						icon:SetTooltip( name )
-						table.insert( modelicons, icon )
+						icon:SetModel( result.model )
+						icon:SetTooltip( name .. "\n" .. result.model )
+						icon.ResultList = result
+						table.insert( modelicons_forhands, icon )
+						
+						function icon:MakeHandIcon()
+							if !self.ResultList then print("EPS Hands: Result list missing.") return end
+
+							local CL_FISTS		= ClientsideModel("models/weapons/c_arms.mdl")
+							local CL_REALHANDS	= ClientsideModel( self.ResultList.model )
+
+							CL_FISTS:SetNoDraw( false )
+							CL_REALHANDS:SetNoDraw( false )
+
+							CL_FISTS:ResetSequence( CL_FISTS:LookupSequence( "fists_idle_01" ) )
+
+							CL_REALHANDS:AddEffects( EF_BONEMERGE )
+
+							CL_REALHANDS:SetParent( CL_FISTS )
+							CL_FISTS:SetupBones()
+							CL_REALHANDS:SetupBones()
+
+							CL_REALHANDS:DrawModel()
+
+							local tab = {}
+							tab.ent		= CL_REALHANDS
+							tab.cam_pos = Vector( 0, 0, 0 )
+							tab.cam_ang = Angle( 4, -18, 0 )
+							tab.cam_fov = 20
+
+							self:RebuildSpawnIconEx( tab )
+
+							CL_FISTS:Remove()
+							CL_REALHANDS:Remove()
+						end
+
+						-- Make a pretty ass icon
+						if !file.Exists( "materials/spawnicons/" .. result.model:StripExtension() .. ".png", "GAME" ) then
+							local thecount = 0
+							timer.Simple( thecount * 0.2, function()
+								if IsValid(icon) then
+									icon:MakeHandIcon()
+								end
+							end)
+							thecount = thecount + 1
+						end
+
 						icon.DoClick = function()
 							RunConsoleCommand( "cl_playerhands", name )
 							RunConsoleCommand( "cl_playerhandsbodygroups", "0" )
 							RunConsoleCommand( "cl_playerhandsskin", "0" )
 							timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 						end
-						
+
+						icon.DoRightClick = function()
+							if IsValid(icon) then
+								icon:MakeHandIcon()
+							end
+						end
+
 						ModelList:AddLine( name, model )
-						
 					end
-					
 				end
-				
+
+				local thelabel = ModelIconLayout:Add( "DLabel" )
+				thelabel:SetText("")
+				function thelabel:Paint( w, h )
+					local old = DisableClipping( true )
+					local ox, oy = self:GetParent():LocalToScreen()
+
+					local nx, ny = self:ScreenToLocal( ox, oy )
+					ny = 0 + 64
+					draw.SimpleText("Icons may not generate because of jank with spawnicon generation,", "DermaDefault", nx, ny + 0, color_black)
+					draw.SimpleText("particularly when others are generating.", "DermaDefault", nx, ny + 12, color_black)
+					draw.SimpleText("Press RIGHT-CLICK on an icon to regenerate it manually.", "DermaDefault", nx, ny + 24, color_black)
+					DisableClipping( old )
+				end
 			end
 			
 			Menu.HandsPopulate()
@@ -1131,13 +1196,23 @@ function Menu.Setup()
 				for _, icon in pairs( modelicons ) do
 					icon:RebuildSpawnIcon()
 				end
+
+				local thecount = 0
+				for _, icon in pairs( modelicons_forhands ) do
+					timer.Simple( thecount * .2, function()
+						if IsValid(icon) then
+							icon:MakeHandIcon()
+						end
+					end)
+					thecount = thecount + 1
+				end
 			end
 			
 			local t = panel:Add( "DLabel" )
 			t:Dock( TOP )
 			t:DockMargin( 0, 0, 0, 20 )
 			t:SetAutoStretchVertical( true )
-			t:SetText( "Forces all playermodel icons to be re-rendered. Useful if the icons are outdated after custom models changed their appearance. This may take a while, depending on the number of models and your PC's speed." )
+			t:SetText( "Forces all playermodel icons to be re-rendered. Useful if the icons are outdated after custom models changed their appearance. This may take a while, depending on the number of models and your PC's speed.\nThis also regenerates the hand's icons." )
 			t:SetDark( true )
 			t:SetWrap( true )
 			
@@ -1439,14 +1514,7 @@ function Menu.Setup()
 			t:AddFunction( "url", "open", function( str ) gui.OpenURL( str ) end )
 			t:AddFunction( "url", "copy", function( str ) SetClipboardText( str ) end )
 			
-			local intro = [[Created by <a href="javascript:url.open( 'http://steamcommunity.com/id/libertyforce' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/libertyforce' )">LibertyForce</a>.<br>Thank you for installing this addon! Enjoying it?<br>
-			Modified by <a href="javascript:url.open( 'http://steamcommunity.com/id/Fesiug' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/Fesiug' )">Fesiug</a>. You can now customize your hands!<br>
-			Modified by <a href="javascript:url.open( 'http://steamcommunity.com/id/yurannnzzz' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/yurannnzzz' )">YuRaNnNzZZ</a>. You can see your selected hands!<br>
-			<a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )">Please leave a LIKE on the workshop page.</a>]]
-			if !game.SinglePlayer() and !LocalPlayer():IsSuperAdmin() then
-				intro = [[This server is running Enhanced PlayerModel Selector by <a href="javascript:url.open( 'http://steamcommunity.com/id/libertyforce' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/libertyforce' )">LibertyForce</a>. Enjoying it?<br>
-				<a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )">Click here to download this addon for SinglePlayer.</a>]]
-			end
+			local intro = [[]]
 			
 			t:SetHTML( [[
 				<html>
@@ -1462,6 +1530,12 @@ function Menu.Setup()
 								font-size: 15px;
 								color: #5aa9d6;
 								font-weight: bold;
+								margin: 0;
+								padding: 0px 0px 4px 0px;
+							}
+							h3, h4, h5, h6 {
+								margin: 0;
+								padding: 2px 0px 6px 0px;
 							}
 							h1 {
 								font-size: 20px;
@@ -1491,22 +1565,31 @@ function Menu.Setup()
 						</style>
 					</head>
 					<body>
-						<h1>Enhanced Playermodel Selector ]]..Version..[[</h1> 
-						<p>]]..intro..[[</p>
+						<h1><a href="javascript:url.open( 'https://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )" oncontextmenu="url.copy( 'https://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )">Enhanced PlayerModel Selector</a></h1>
+						<h3>originally created by <a href="javascript:url.open( 'https://steamcommunity.com/id/libertyforce' )" oncontextmenu="url.copy( 'https://steamcommunity.com/id/libertyforce' )">LibertyForce</a></h3>
+						<hr>
+						<h1><a href="javascript:url.open( 'https://steamcommunity.com/sharedfiles/filedetails/?id=2257795841' )" oncontextmenu="url.copy( 'https://steamcommunity.com/sharedfiles/filedetails/?id=2257795841' )">Enhanced PlayerModel Selector Fesiug's Edit</a></h1>
+						<h3>a fork by <a href="javascript:url.open( 'https://steamcommunity.com/id/Fesiug/' )" oncontextmenu="url.copy( 'https://steamcommunity.com/id/Fesiug/' )">Fesiug</a></h3>
+						<h4><i>and with contributions from</i></h4>
+						<h3><a href="javascript:url.open( 'https://steamcommunity.com/id/yurannnzzz' )" oncontextmenu="url.copy( 'https://steamcommunity.com/id/yurannnzzz' )">YuRaNnNzZZ</a></h3>
+						<li>for the hands preview</li>
+						<h3><a href="javascript:url.open( 'https://steamcommunity.com/id/dar-su' )" oncontextmenu="url.copy( 'https://steamcommunity.com/id/dar-su' )">Darsu</a></h3>
+						<li>for the hands preview animation</li>
+						<hr>
 						<h2>Compatible Addons</h1>
 						<p>Enhanced Playermodel Selector provides additional functionality with those addons installed:
 						<ul>
-							<li><a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=112806637' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=112806637' )">Gmod Legs 3</a></li>
-							<li><a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=742906087' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=742906087' )">TFA-VOX || Player Callouts Redefined</a></li>
+							<li><a href="javascript:url.open( 'https://steamcommunity.com/sharedfiles/filedetails/?id=112806637' )" oncontextmenu="url.copy( 'https://steamcommunity.com/sharedfiles/filedetails/?id=112806637' )">Gmod Legs 3</a></li>
+							<li><a href="javascript:url.open( 'https://steamcommunity.com/sharedfiles/filedetails/?id=742906087' )" oncontextmenu="url.copy( 'https://steamcommunity.com/sharedfiles/filedetails/?id=742906087' )">TFA-VOX || Player Callouts Redefined</a></li>
 						</ul></p>
 						<h2>More addons</h2>
 						<p><ul>
-							<li><a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=624173012' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=624173012' )">Simple Addon Manager</a><br>
+							<li><a href="javascript:url.open( 'https://steamcommunity.com/sharedfiles/filedetails/?id=624173012' )" oncontextmenu="url.copy( 'https://steamcommunity.com/sharedfiles/filedetails/?id=624173012' )">Simple Addon Manager</a><br>
 							<small>Tired of the slow and annoying addon manager included in Gmod? Here comes and easy to use and efficient alternative that allows you to handle even large addon collections.<br>
 							+ Toggle multiple addons at once<br>+ Add tags to your addons<br>+ Cleanup your addons by uninstalling them at once</small><br>&nbsp;</li>
-							<li><a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=492765756' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=492765756' )">Weapon: Setup, Transfer And Restore</a><br>
+							<li><a href="javascript:url.open( 'https://steamcommunity.com/sharedfiles/filedetails/?id=492765756' )" oncontextmenu="url.copy( 'https://steamcommunity.com/sharedfiles/filedetails/?id=492765756' )">Weapon: Setup, Transfer And Restore</a><br>
 							<small>This addon provides an easy way to restore all your weapons and ammo after you die, without having to spawn them again.</small><br>&nbsp;</li>
-							<li><a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=351603470' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=351603470' )">Anti-FriendlyFire (NPC)</a><br>
+							<li><a href="javascript:url.open( 'https://steamcommunity.com/sharedfiles/filedetails/?id=351603470' )" oncontextmenu="url.copy( 'https://steamcommunity.com/sharedfiles/filedetails/?id=351603470' )">Anti-FriendlyFire (NPC)</a><br>
 							<small>If you where ever annoyed by your allies killing each other in friendly fire, which made large NPC battle pretty much useless, then you have just found the solution! This mod allows you to turn off Friendly Fire towards and between NPCs.</small></li>
 						</ul></p>
 						<h2 style="font-size: 10px">Left click: Open in Steam Overlay.<br>Right click: Copy URL to clipboard for use in browser.</h2>
