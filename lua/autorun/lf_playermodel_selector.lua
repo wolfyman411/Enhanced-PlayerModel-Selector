@@ -100,8 +100,6 @@ net.Receive("lf_playermodel_blacklist", function( len, ply )
 	end
 end )
 
-
-
 local VOXlist = { }
 
 function lf_playermodel_selector_get_voxlist() -- global
@@ -378,6 +376,7 @@ end
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
 if CLIENT then
+	
 
 
 local Version = "3.3, Fesiug's Edit"
@@ -482,6 +481,16 @@ local function LoadFavorite( ply, cmd, args )
 	end
 end
 concommand.Add( "playermodel_loadfav", LoadFavorite )
+
+
+-- Horrible. I hate Garry's Mod
+local HandIconGenerator = GetRenderTarget("HandIconGenerator", 512, 512)
+local myMat2 = CreateMaterial( "HandIconGenerator_RTMat", "UnlitGeneric", {
+	["$basetexture"] = HandIconGenerator:GetName(), -- Make the material use our render target texture
+	["$translucent"] = 1,
+	["$vertexcolor"] = 1,
+	["$vertexalpha"] = 1,
+} )
 
 
 function Menu.Setup()
@@ -830,51 +839,115 @@ function Menu.Setup()
 						local icon = ModelIconLayout:Add( "SpawnIcon" )
 						icon:SetSize( 64, 64 )
 						--icon:InvalidateLayout( true )
-						icon:SetModel( result.model )
+						icon:SetModel( "models/kleiner_animations.mdl" )
 						icon:SetTooltip( name .. "\n" .. result.model )
 						icon.ResultList = result
+
+						function icon:Paint( w, h )
+							return true
+						end
 						table.insert( modelicons_forhands, icon )
 						
 						function icon:MakeHandIcon()
 							if !self.ResultList then print("EPS Hands: Result list missing.") return end
 
 							local CL_FISTS		= ClientsideModel("models/weapons/c_arms.mdl")
-							local CL_REALHANDS	= ClientsideModel( self.ResultList.model )
+							local CL_REALHANDS	= ClientsideModel( self.ResultList.model, RENDERGROUP_BOTH )
 
-							CL_FISTS:SetNoDraw( false )
-							CL_REALHANDS:SetNoDraw( false )
+							CL_FISTS:SetNoDraw( true )
+							CL_FISTS:SetPos( vector_origin )
+							CL_FISTS:SetAngles( angle_zero )
+							CL_REALHANDS:SetNoDraw( true )
 
 							CL_FISTS:ResetSequence( CL_FISTS:LookupSequence( "fists_idle_01" ) )
 
 							CL_REALHANDS:AddEffects( EF_BONEMERGE )
 
 							CL_REALHANDS:SetParent( CL_FISTS )
-							CL_FISTS:SetupBones()
-							CL_REALHANDS:SetupBones()
 
-							CL_REALHANDS:DrawModel()
+							local cam_pos = Vector( 0, 0, 0 )
+							local cam_ang = Angle( 4, -18, 0 )
+							local cam_fov = 20
 
-							local tab = {}
-							tab.ent		= CL_REALHANDS
-							tab.cam_pos = Vector( 0, 0, 0 )
-							tab.cam_ang = Angle( 4, -18, 0 )
-							tab.cam_fov = 20
+							render.PushRenderTarget( HandIconGenerator )
+								render.OverrideDepthEnable( true, true )
+								render.SetWriteDepthToDestAlpha( false )
+								render.SuppressEngineLighting( true )
 
-							self:RebuildSpawnIconEx( tab )
+								local CL_SHIRT = {
+									{
+										type = MATERIAL_LIGHT_POINT,
+										color = Vector( 1, 1, 1 )*1,
+										pos = Vector( 0, -48, 32 ),
+									},
+									{
+										type = MATERIAL_LIGHT_POINT,
+										color = Vector( -1, -1, -1 )*1,
+										pos = Vector( 0, 32, -64 ),
+									},
+								}
+								
+								render.SetLocalModelLights(CL_SHIRT)
+								render.Clear( 0, 0, 0, 0 )
+								render.ClearDepth( true )
+								render.OverrideAlphaWriteEnable( true, true )
+
+								cam.Start3D( cam_pos, cam_ang, cam_fov, 0, 0, 64, 64, 0.1, 1000 )
+									CL_FISTS:SetupBones()
+									CL_REALHANDS:SetupBones()
+									CL_REALHANDS:DrawModel( STUDIO_TWOPASS )
+								cam.End3D()
+
+								print( "Generating " .. result.model:StripExtension() )
+								local data = render.Capture( {
+									format = "png",
+									x = 0,
+									y = 0,
+									w = 512,
+									h = 512
+								} )
+
+								if !file.Exists("eps_hands", "DATA") then
+									file.CreateDir("eps_hands")
+								end
+
+								local EXPLOSION = string.Explode( "/", result.model:StripExtension(), false )
+								EXPLOSION[#EXPLOSION] = nil
+								EXPLOSION = table.concat( EXPLOSION, "/" )
+								file.CreateDir( "eps_hands/" .. EXPLOSION )
+								local fullpath = "eps_hands/" .. result.model:StripExtension() .. ".png"
+								file.Write( fullpath, data )
+
+								render.OverrideAlphaWriteEnable( false )
+								render.SuppressEngineLighting( false )
+								render.OverrideDepthEnable( false )
+							render.PopRenderTarget()
+							--icon:SetModel("models/kleiner_animations.mdl")
+							icon:SetIcon( "data/eps_hands/" .. result.model:StripExtension() .. ".png" )
+							--icon:SetTooltip( name .. "\n" .. result.model )
+
+							--local tab = {}
+							--tab.ent		= CL_REALHANDS
+							--tab.cam_pos = Vector( 0, 0, 0 )
+							--tab.cam_ang = Angle( 4, -18, 0 )
+							--tab.cam_fov = 20
+
+							--self:RebuildSpawnIconEx( tab )
 
 							CL_FISTS:Remove()
 							CL_REALHANDS:Remove()
 						end
 
 						-- Make a pretty ass icon
-						if !file.Exists( "materials/spawnicons/" .. result.model:StripExtension() .. ".png", "GAME" ) then
-							local thecount = 0
-							timer.Simple( thecount * 0.2, function()
-								if IsValid(icon) then
-									icon:MakeHandIcon()
-								end
-							end)
-							thecount = thecount + 1
+						if !file.Exists( "eps_hands/" .. result.model:StripExtension() .. ".png", "DATA" ) then
+							print("IT DOESN'T EXIST", "eps_hands/" .. result.model:StripExtension() .. ".png")
+							if IsValid(icon) then
+								icon:MakeHandIcon()
+							end
+						else
+							--icon:SetModel("models/kleiner_animations.mdl")
+							icon:SetIcon( "data/eps_hands/" .. result.model:StripExtension() .. ".png" )
+							--icon:SetTooltip( name .. "\n" .. result.model )
 						end
 
 						icon.DoClick = function()
@@ -894,19 +967,19 @@ function Menu.Setup()
 					end
 				end
 
-				local thelabel = ModelIconLayout:Add( "DLabel" )
-				thelabel:SetText("")
-				function thelabel:Paint( w, h )
-					local old = DisableClipping( true )
-					local ox, oy = self:GetParent():LocalToScreen()
+				--local thelabel = ModelIconLayout:Add( "DLabel" )
+				--thelabel:SetText("")
+				--function thelabel:Paint( w, h )
+				--	local old = DisableClipping( true )
+				--	local ox, oy = self:GetParent():LocalToScreen()
 
-					local nx, ny = self:ScreenToLocal( ox, oy )
-					ny = 0 + 64
-					draw.SimpleText("Icons may not generate because of jank with spawnicon generation,", "DermaDefault", nx, ny + 0, color_black)
-					draw.SimpleText("particularly when others are generating.", "DermaDefault", nx, ny + 12, color_black)
-					draw.SimpleText("Press RIGHT-CLICK on an icon to regenerate it manually.", "DermaDefault", nx, ny + 24, color_black)
-					DisableClipping( old )
-				end
+				--	local nx, ny = self:ScreenToLocal( ox, oy )
+				--	ny = 0 + 64
+				--	draw.SimpleText("Icons may not generate because of jank with spawnicon generation,", "DermaDefault", nx, ny + 0, color_black)
+				--	draw.SimpleText("particularly when others are generating.", "DermaDefault", nx, ny + 12, color_black)
+				--	draw.SimpleText("Press RIGHT-CLICK on an icon to regenerate it manually.", "DermaDefault", nx, ny + 24, color_black)
+				--	DisableClipping( old )
+				--end
 			end
 			
 			Menu.HandsPopulate()
@@ -1197,14 +1270,11 @@ function Menu.Setup()
 					icon:RebuildSpawnIcon()
 				end
 
-				local thecount = 0
+				-- local thecount = 0
 				for _, icon in pairs( modelicons_forhands ) do
-					timer.Simple( thecount * .2, function()
-						if IsValid(icon) then
-							icon:MakeHandIcon()
-						end
-					end)
-					thecount = thecount + 1
+					if IsValid(icon) then
+						icon:MakeHandIcon()
+					end
 				end
 			end
 			
