@@ -428,6 +428,7 @@ CreateClientConVar( "cl_playermodel_selector_force", "1", true, true )
 CreateClientConVar( "cl_playermodel_selector_unlockflexes", "0", false, true )
 CreateClientConVar( "cl_playermodel_selector_bgcolor_custom", "1", true, true )
 CreateClientConVar( "cl_playermodel_selector_bgcolor_trans", "1", true, true )
+CreateClientConVar( "cl_playermodel_selector_ignorehands", "1", true, true )
 
 --net.Start("lf_playermodel_client_sync")
 --net.SendToServer()
@@ -713,7 +714,8 @@ function Menu.Setup()
 				for name, model in SortedPairs( AllModels ) do
 					
 					if IsInFilter( name ) then
-					
+						if GetConVar( "cl_playermodel_selector_ignorehands" ):GetBool() and player_manager.TranslatePlayerHands(name).model == model then continue end -- No
+
 						local icon = ModelIconLayout:Add( "SpawnIcon" )
 						icon:SetSize( 64, 64 )
 						--icon:InvalidateLayout( true )
@@ -862,6 +864,8 @@ function Menu.Setup()
 							CL_FISTS:ResetSequence( CL_FISTS:LookupSequence( "fists_idle_01" ) )
 
 							CL_REALHANDS:AddEffects( EF_BONEMERGE )
+							CL_REALHANDS:SetBodyGroups(result.body)
+							CL_REALHANDS:SetSkin(result.skin)
 
 							CL_REALHANDS:SetParent( CL_FISTS )
 
@@ -1236,6 +1240,27 @@ function Menu.Setup()
 			t:DockMargin( 0, 0, 0, 20 )
 			t:SetAutoStretchVertical( true )
 			t:SetText( "If enabled, the menu backgroup will be transparent. If disabled, the background will be opaque." )
+			t:SetDark( true )
+			t:SetWrap( true )
+			
+			local c = panel:Add( "DCheckBoxLabel" )
+			c.cvar = "cl_playermodel_selector_ignorehands"
+			c:Dock( TOP )
+			c:DockMargin( 0, 0, 0, 5 )
+			c:SetValue( GetConVar(c.cvar):GetBool() )
+			c:SetText( "Ignore c_hands only \"playermodels\" in main list" )
+			c:SetDark( true )
+			c:SizeToContents()
+			c.OnChange = function( p, v )
+				RunConsoleCommand( c.cvar, v == true and "1" or "0" )
+				Menu.ModelPopulate()
+			end
+
+			local t = panel:Add( "DLabel" )
+			t:Dock( TOP )
+			t:DockMargin( 0, 0, 0, 20 )
+			t:SetAutoStretchVertical( true )
+			t:SetText( "If enabled, \"playermodels\" that are nothing but floating pair of hands will be not shown in list of available playermodels. Disable to see all registered playermodels." )
 			t:SetDark( true )
 			t:SetWrap( true )
 			
