@@ -493,6 +493,7 @@ local myMat2 = CreateMaterial( "HandIconGenerator_RTMat", "UnlitGeneric", {
 	["$vertexalpha"] = 1,
 } )
 local matshiny = Material("models/shiny")
+local hasbgs = Material("eps/hasbgs2.png", "mips smooth") -- or hasbgs3   idk which better
 
 
 function Menu.Setup()
@@ -930,13 +931,21 @@ function Menu.Setup()
 								render.OverrideBlend( false )
 								render.SuppressEngineLighting(false)
 
+								if CL_REALHANDS:GetNumBodyGroups() > 1 then
+									cam.Start2D()
+										surface.SetDrawColor( 255, 255, 255, 255 )
+										surface.SetMaterial(hasbgs)
+										surface.DrawTexturedRect(0, 0, 64, 64)
+									cam.End2D()
+								end
+
 								print( "Generating " .. result.model:StripExtension() )
 								local data = render.Capture( {
 									format = "png",
 									x = 0,
 									y = 0,
-									w = 512,
-									h = 512
+									w = 64,
+									h = 64
 								} )
 
 								if !file.Exists("eps_hands", "DATA") then
