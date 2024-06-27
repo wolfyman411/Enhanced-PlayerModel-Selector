@@ -492,6 +492,7 @@ local myMat2 = CreateMaterial( "HandIconGenerator_RTMat", "UnlitGeneric", {
 	["$vertexcolor"] = 1,
 	["$vertexalpha"] = 1,
 } )
+local matshiny = Material("models/shiny")
 
 
 function Menu.Setup()
@@ -870,8 +871,8 @@ function Menu.Setup()
 							CL_REALHANDS:SetParent( CL_FISTS )
 
 							local cam_pos = Vector( 0, 0, 0 )
-							local cam_ang = Angle( 4, -18, 0 )
-							local cam_fov = 20
+							local cam_ang = Angle( 6, -16.9, 0 )
+							local cam_fov = 17
 
 							render.PushRenderTarget( HandIconGenerator )
 								render.OverrideDepthEnable( true, true )
@@ -892,15 +893,42 @@ function Menu.Setup()
 								}
 								
 								render.SetLocalModelLights(CL_SHIRT)
-								render.Clear( 0, 0, 0, 0 )
+								-- render.Clear(0, 0, 0, 0, true, true)
+								render.Clear(0, 0, 0, 0)
 								render.ClearDepth( true )
 								render.OverrideAlphaWriteEnable( true, true )
+
+
+									-- rendering twice to get good alpha
+								render.SetBlend(1)
+								render.SetColorModulation(1, 1, 1)
+								render.MaterialOverride(matshiny)
+								render.OverrideColorWriteEnable(true, false)
+								
+								cam.Start3D( cam_pos, cam_ang, cam_fov, 0, 0, 64, 64, 0.1, 1000 )
+									CL_FISTS:SetupBones()
+									CL_REALHANDS:SetupBones()
+									CL_REALHANDS:DrawModel( STUDIO_TWOPASS )
+								cam.End3D()
+
+								render.OverrideColorWriteEnable(false, false)
+								render.MaterialOverride()
+
+
+								render.SetWriteDepthToDestAlpha( true )
+								render.OverrideBlend( true, BLEND_ONE, BLEND_ZERO, BLENDFUNC_ADD, BLEND_ZERO, BLEND_ONE, BLENDFUNC_ADD )
 
 								cam.Start3D( cam_pos, cam_ang, cam_fov, 0, 0, 64, 64, 0.1, 1000 )
 									CL_FISTS:SetupBones()
 									CL_REALHANDS:SetupBones()
 									CL_REALHANDS:DrawModel( STUDIO_TWOPASS )
 								cam.End3D()
+
+								render.MaterialOverride()
+								render.SetWriteDepthToDestAlpha( false )
+
+								render.OverrideBlend( false )
+								render.SuppressEngineLighting(false)
 
 								print( "Generating " .. result.model:StripExtension() )
 								local data = render.Capture( {
