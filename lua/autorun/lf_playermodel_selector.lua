@@ -493,7 +493,7 @@ local myMat2 = CreateMaterial( "HandIconGenerator_RTMat", "UnlitGeneric", {
 	["$vertexalpha"] = 1,
 } )
 local matshiny = Material("models/shiny")
-local hasbgs = Material("eps/hasbgs2.png", "mips smooth") -- or hasbgs3   idk which better
+local hasbgs = Material("eps/hasbgs4.png", "mips smooth") -- or hasbgs3   idk which better
 
 
 function Menu.Setup()
