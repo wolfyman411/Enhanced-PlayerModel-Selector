@@ -1736,6 +1736,7 @@ function Menu.Setup()
 
 	function Menu.MakeNiceName( str )
 		local newname = {}
+		if string.find(str, ".smd") then str = string.sub(str, 0, -5) end
 
 		for _, s in pairs( string.Explode( "_", str ) ) do
 			if ( string.len( s ) == 1 ) then table.insert( newname, string.upper( s ) ) continue end
@@ -1856,9 +1857,30 @@ function Menu.Setup()
 			bgroup.typenum = k
 			bgroup:SetMax( mdl.Entity:GetBodygroupCount( k ) - 1 )
 			bgroup:SetValue( groups[ k + 1 ] or 0 )
-			bgroup.OnValueChanged = Menu.UpdateBodyGroups
+			-- bgroup.OnValueChanged = Menu.UpdateBodyGroups
 			
 			bdcontrolspanel:AddItem( bgroup )
+
+			local tgroup
+			local submdls = mdl.Entity:GetBodyGroups()[k+1].submodels
+			if istable(submdls) then 
+				local mdl = submdls[tonumber(groups[ k + 1 ] or 0)] or "idk"
+				tgroup = vgui.Create( "DLabel" )
+				tgroup:Dock( TOP )
+				tgroup:DockMargin(10, -15, 0, 0)
+				tgroup:SetText( Menu.MakeNiceName( mdl ))
+				
+				bdcontrolspanel:AddItem( tgroup )
+			end
+
+			bgroup.OnValueChanged = function(something1, val)
+				local submdls = mdl.Entity:GetBodyGroups()[k+1].submodels
+				if istable(submdls) then
+					tgroup:SetText(Menu.MakeNiceName(submdls[math.Round(val)]) or "idk")
+				end
+				
+				Menu.UpdateBodyGroups(something1, val) 
+			end
 
 			mdl.Entity:SetBodygroup( k, groups[ k + 1 ] or 0 )
 			
@@ -1905,6 +1927,27 @@ function Menu.Setup()
 				
 				h__bdcontrolspanel:AddItem( bgroup )
 
+				local tgroup
+				local submdls = mdl.EntityHands:GetBodyGroups()[k+1].submodels
+				if istable(submdls) then 
+					local mdl = submdls[tonumber(groups[ k + 1 ] or 0)] or "idk"
+					tgroup = vgui.Create( "DLabel" )
+					tgroup:Dock( TOP )
+					tgroup:DockMargin(10, -15, 0, 0)
+					tgroup:SetText( Menu.MakeNiceName( mdl ))
+					
+					h__bdcontrolspanel:AddItem( tgroup )
+				end
+	
+				bgroup.OnValueChanged = function(something1, val)
+					local submdls = mdl.EntityHands:GetBodyGroups()[k+1].submodels
+					if istable(submdls) then
+						tgroup:SetText(Menu.MakeNiceName(submdls[math.Round(val)]) or "idk")
+					end
+					
+					Menu.UpdateBodyGroups(something1, val) 
+				end
+	
 				mdl.EntityHands:SetBodygroup( k, groups[ k + 1 ] or 0 )
 				
 				h__bgtab.Tab:SetVisible( true )
