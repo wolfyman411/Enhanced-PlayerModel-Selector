@@ -496,6 +496,64 @@ local matshiny = Material("models/shiny")
 local hasbgs = Material("eps/hasbgs4.png", "mips smooth") -- or hasbgs3   idk which better
 
 
+function Menu.UpdateFromConvars()
+	if ( IsValid( mdl.EntityHands ) ) then
+		mdl.EntityHands:Remove()
+	end
+	if ( IsValid( mdl.EntityHandsAnim ) ) then
+		mdl.EntityHandsAnim:Remove()
+	end
+	mdl.EntityHandsAnim = ClientsideModel( handsAnimModel, RENDERGROUP_OTHER )
+	mdl.EntityHandsAnim:SetNoDraw( true )
+	mdl.EntityHandsAnim:SetPos( Vector( 0, 0, 0 ) )
+
+	if true or ( Menu.IsHandsTabActive() ) then
+		mdl:SetModel( handsAnimModel )
+		local model = LocalPlayer():GetInfo( "cl_playerhands" )
+
+		if ( model == "" ) then
+			model = LocalPlayer():GetInfo( "cl_playermodel" )
+		end
+
+		local mdlhands = player_manager.TranslatePlayerHands( model )
+
+		util.PrecacheModel( mdlhands.model )
+
+		mdl.EntityHands = ClientsideModel( mdlhands.model, RENDERGROUP_OTHER )
+		mdl.EntityHands:SetParent( mdl.EntityHandsAnim )
+		mdl.EntityHands:SetNoDraw( true )
+
+		local dumbassproof = mdlhands.skin
+		if !isnumber( dumbassproof ) then
+			dumbassproof = 0
+		end
+
+		mdl.EntityHands:SetSkin( dumbassproof )
+		mdl.EntityHands:SetBodyGroups( mdlhands.body )
+		mdl.EntityHands.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
+
+		Menu.PlayHandsPreviewAnimation( mdl, model )
+		--Menu.RebuildBodygroupTab()
+		--return
+	end
+
+	if true then
+		local model = LocalPlayer():GetInfo( "cl_playermodel" )
+		local modelname = player_manager.TranslatePlayerModel( model )
+		util.PrecacheModel( modelname )
+		mdl:SetModel( modelname )
+		mdl.Entity.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
+		mdl.Entity:SetPos( Vector( -100, 0, -61 ) )
+
+		plycol:SetVector( Vector( GetConVar( "cl_playercolor" ):GetString() ) )
+		wepcol:SetVector( Vector( GetConVar( "cl_weaponcolor" ):GetString() ) )
+
+		Menu.PlayPreviewAnimation( mdl, model )
+		Menu.RebuildBodygroupTab()
+	end
+
+end
+
 function Menu.Setup()
 
 	Frame = vgui.Create( "DFrame" )
@@ -867,7 +925,7 @@ function Menu.Setup()
 
 							CL_REALHANDS:AddEffects( EF_BONEMERGE )
 							CL_REALHANDS:SetBodyGroups(result.body)
-							CL_REALHANDS:SetSkin(result.skin)
+							CL_REALHANDS:SetSkin(isnumber(result.skin) and result.skin or 0)
 
 							CL_REALHANDS:SetParent( CL_FISTS )
 
@@ -1997,64 +2055,6 @@ function Menu.Setup()
 	end
 	
 	local handsAnimModel = Model( "models/weapons/chand_checker.mdl" )
-
-	function Menu.UpdateFromConvars()
-		if ( IsValid( mdl.EntityHands ) ) then
-			mdl.EntityHands:Remove()
-		end
-		if ( IsValid( mdl.EntityHandsAnim ) ) then
-			mdl.EntityHandsAnim:Remove()
-		end
-		mdl.EntityHandsAnim = ClientsideModel( handsAnimModel, RENDERGROUP_OTHER )
-		mdl.EntityHandsAnim:SetNoDraw( true )
-		mdl.EntityHandsAnim:SetPos( Vector( 0, 0, 0 ) )
-
-		if true or ( Menu.IsHandsTabActive() ) then
-			mdl:SetModel( handsAnimModel )
-			local model = LocalPlayer():GetInfo( "cl_playerhands" )
-
-			if ( model == "" ) then
-				model = LocalPlayer():GetInfo( "cl_playermodel" )
-			end
-
-			local mdlhands = player_manager.TranslatePlayerHands( model )
-
-			util.PrecacheModel( mdlhands.model )
-
-			mdl.EntityHands = ClientsideModel( mdlhands.model, RENDERGROUP_OTHER )
-			mdl.EntityHands:SetParent( mdl.EntityHandsAnim )
-			mdl.EntityHands:SetNoDraw( true )
-
-			local dumbassproof = mdlhands.skin
-			if !isnumber( dumbassproof ) then
-				dumbassproof = 0
-			end
-
-			mdl.EntityHands:SetSkin( dumbassproof )
-			mdl.EntityHands:SetBodyGroups( mdlhands.body )
-			mdl.EntityHands.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
-
-			Menu.PlayHandsPreviewAnimation( mdl, model )
-			--Menu.RebuildBodygroupTab()
-			--return
-		end
-
-		if true then
-			local model = LocalPlayer():GetInfo( "cl_playermodel" )
-			local modelname = player_manager.TranslatePlayerModel( model )
-			util.PrecacheModel( modelname )
-			mdl:SetModel( modelname )
-			mdl.Entity.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
-			mdl.Entity:SetPos( Vector( -100, 0, -61 ) )
-
-			plycol:SetVector( Vector( GetConVar( "cl_playercolor" ):GetString() ) )
-			wepcol:SetVector( Vector( GetConVar( "cl_weaponcolor" ):GetString() ) )
-
-			Menu.PlayPreviewAnimation( mdl, model )
-			Menu.RebuildBodygroupTab()
-		end
-
-	end
 
 	function Menu.UpdateFromControls()
 
