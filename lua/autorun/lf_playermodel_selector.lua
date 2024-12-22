@@ -510,12 +510,41 @@ local modelWhitelist = {
 	["models/player/rblx/robloxian2007_zombie.mdl"] = true,
 }
 
+function populateWhiteList()
+	local savePath = "player_storage/blacklist.txt"
+	if not file.Exists("player_storage", "DATA") then
+		file.CreateDir("player_storage")
+	end
+	local function SaveTextToFile(text)
+		file.Write(savePath, text)
+	end
+	local function LoadTextFromFile()
+		if file.Exists(savePath, "DATA") then
+			return file.Read(savePath, "DATA")
+		else
+			return ""
+		end
+	end
+
+	local lines = string.Explode("\n", LoadTextFromFile())
+	modelWhitelist = {}
+
+	for _, line in ipairs(lines) do
+        local model = string.Trim(line)
+        if model ~= "" then
+            if file.Exists(model, "GAME") then
+                modelWhitelist[model] = true
+            end
+        end
+    end
+end
+
 function Menu.UpdateFromConvars()
 	-- wah wah dont error ples
 end
 
 function Menu.Setup()
-
+	populateWhiteList()
 	Frame = vgui.Create( "DFrame" )
 	local fw, fh = math.min( ScrW() - 16, 960 ), math.min( ScrH() - 16, 700 )
 	Frame:SetSize( fw, fh )
@@ -730,11 +759,11 @@ function Menu.Setup()
 						return true
 					end
 				end
-
+					
 				for name, model in SortedPairs( AllModels ) do
 					if ( !modelWhitelist[model] ) then continue end
 
-					if IsInFilter( name ) then
+					if IsInFilter( name ) or #modelWhitelist < 1 then
 						if GetConVar( "cl_playermodel_selector_ignorehands" ):GetBool() and player_manager.TranslatePlayerHands(name).model == model then continue end -- No
 
 						local icon = ModelIconLayout:Add( "SpawnIcon" )
@@ -1477,6 +1506,54 @@ function Menu.Setup()
 				t:SetDark( true )
 				t:SetWrap( true )
 
+				local savePath = "player_storage/blacklist.txt"
+				if not file.Exists("player_storage", "DATA") then
+					file.CreateDir("player_storage")
+				end
+				local function SaveTextToFile(text)
+					file.Write(savePath, text)
+				end
+				local function LoadTextFromFile()
+					if file.Exists(savePath, "DATA") then
+						return file.Read(savePath, "DATA")
+					else
+						return ""
+					end
+				end
+
+				local TextEntry = panel:Add("DTextEntry")
+				local tempText = LoadTextFromFile()
+
+				local function GetLineCount(text)
+					if text == "" then return 0 end
+					return #string.Explode("\n", text)
+				end
+				
+				if tempText ~= "" then
+					TextEntry:SetValue(tempText)
+					local text = TextEntry:GetValue()
+					TextEntry:SetHeight( 20*GetLineCount(tempText) )
+					print(GetLineCount(tempText))
+				else
+					TextEntry:SetHeight( 20 )
+				end
+				TextEntry:Dock( TOP )
+				TextEntry:DockMargin( 0, 0, 0, 10 )
+				TextEntry:SetMultiline(true)
+
+				TextEntry.OnChange = function(self)
+					local text = self:GetValue()
+					TextEntry:SetHeight( 20*GetLineCount(text) )
+					SaveTextToFile(text)
+				end
+
+				local t = panel:Add( "DLabel" )
+				t:Dock( TOP )
+				t:DockMargin( 0, 0, 0, 20 )
+				t:SetAutoStretchVertical( true )
+				t:SetText( "List of whitelisted models." )
+				t:SetDark( true )
+				t:SetWrap( true )
 
 				local panel = moretab:Add( "DPanel" )
 				moretab:AddSheet( "GM Blacklist", panel, "icon16/delete.png" )
