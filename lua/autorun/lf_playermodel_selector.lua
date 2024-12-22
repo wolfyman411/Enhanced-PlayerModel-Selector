@@ -763,7 +763,7 @@ function Menu.Setup()
 				end
 
 				for name, model in SortedPairs( AllModels ) do
-					if ( #modelWhitelist > 0 and !modelWhitelist[model] and util.IsValidModel(model) ) then continue end
+					if ( #modelWhitelist > 0 and !modelWhitelist[model] and !util.IsValidModel(model) ) then continue end
 
 					if IsInFilter( name ) then
 						if GetConVar( "cl_playermodel_selector_ignorehands" ):GetBool() and player_manager.TranslatePlayerHands(name).model == model then continue end -- No
