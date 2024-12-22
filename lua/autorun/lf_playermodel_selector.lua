@@ -512,20 +512,21 @@ local modelWhitelist = {
 	["models/player/rblx/robloxian2007_zombie.mdl"] = true,
 }
 
+file.CreateDir("player_storage")
+
 function populateWhiteList()
 	local savePath = "player_storage/blacklist.txt"
-	if not file.Exists("player_storage", "DATA") then
-		file.CreateDir("player_storage")
-	end
+
 	local function SaveTextToFile(text)
 		file.Write(savePath, text)
 	end
+
 	local function LoadTextFromFile()
 		if file.Exists(savePath, "DATA") then
 			return file.Read(savePath, "DATA")
-		else
-			return ""
 		end
+
+		return ""
 	end
 
 	local lines = string.Explode("\n", LoadTextFromFile())
@@ -533,7 +534,7 @@ function populateWhiteList()
 
 	for _, line in ipairs(lines) do
         local model = string.Trim(line)
-        if model ~= "" then
+        if model != "" then
             if file.Exists(model, "GAME") then
                 modelWhitelist[model] = true
             end
