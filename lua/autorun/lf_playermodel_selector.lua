@@ -168,21 +168,21 @@ end
 
 local function UpdatePlayerModel( ply )
 	if Allowed( ply ) then
-		
+
 		ply.lf_playermodel_spawned = true
-		
+
 		if debugmode then print( "LF_PMS: Updating playermodel for: "..tostring( ply:GetName() ) ) end
-		
+
 		local mdlname = ply:GetInfo( "cl_playermodel" )
 		local mdlpath = player_manager.TranslatePlayerModel( mdlname )
-		
+
 		SetMDL( ply, mdlpath )
 		if debugmode then print( "LF_PMS: Set model to: "..tostring( mdlname ).." - "..tostring( mdlpath ) ) end
-		
+
 		local skin = ply:GetInfoNum( "cl_playerskin", 0 )
 		ply:SetSkin( skin )
 		if debugmode then print( "LF_PMS: Set model skin to no.: "..tostring( skin ) ) end
-		
+
 		local groups = ply:GetInfo( "cl_playerbodygroups" )
 		if ( groups == nil ) then groups = "" end
 		local groups = string.Explode( " ", groups )
@@ -191,7 +191,7 @@ local function UpdatePlayerModel( ply )
 			ply:SetBodygroup( k, v )
 			if debugmode then print( "LF_PMS: Set bodygroup no. "..tostring( k ).." to: "..tostring( v ) ) end
 		end
-		
+
 		if GetConVar( "sv_playermodel_selector_flexes" ):GetBool() and tobool( ply:GetInfoNum( "cl_playermodel_selector_unlockflexes", 0 ) ) then
 			local flexes = ply:GetInfo( "cl_playerflexes" )
 			if ( flexes == nil ) or ( flexes == "0" ) then return end
@@ -200,17 +200,17 @@ local function UpdatePlayerModel( ply )
 				ply:SetFlexWeight( k, tonumber( flexes[ k + 1 ] ) or 0 )
 			end
 		end
-		
+
 		local pcol = ply:GetInfo( "cl_playercolor" )
 		local wcol = ply:GetInfo( "cl_weaponcolor" )
 		ply:SetPlayerColor( Vector( pcol ) )
 		ply:SetWeaponColor( Vector( wcol ) )
-		
+
 		timer.Simple( 0.1, function() if ply.SetupHands and isfunction( ply.SetupHands ) then ply:SetupHands() end end )
 		timer.Simple( 0.2, function()
 			if ply:GetInfo( "cl_playerhands" ) != "" then mdlname = ply:GetInfo( "cl_playerhands" ) end
 			local mdlhands = player_manager.TranslatePlayerHands( mdlname )
-			
+
 			local hands_ent = ply:GetHands()
 			if hands_ent and mdlhands and istable( mdlhands ) then
 				if hands_ent:GetModel() != mdlhands.model then
@@ -223,7 +223,7 @@ local function UpdatePlayerModel( ply )
 						local skin = ply:GetInfoNum( "cl_playerhandsskin", 0 )
 						hands_ent:SetSkin( skin )
 						if debugmode then print( "LF_PMS: Set hands model skin to no.: "..tostring( skin ) ) end
-		
+
 						local groups = ply:GetInfo( "cl_playerhandsbodygroups" )
 						if ( groups == nil ) then groups = "" end
 						local groups = string.Explode( " ", groups )
@@ -250,11 +250,11 @@ local function UpdatePlayerModel( ply )
 				if debugmode then print( "LF_PMS: ERROR - SetupHands failed. player_manager.TranslatePlayerHands didn't return valid data. Please check for incompatible addons." ) end
 			end
 		end )
-		
+
 		if addon_legs then
 			hook.Run( "SetModel", ply, mdlpath )
 		end
-		
+
 	end
 end
 
@@ -303,7 +303,7 @@ hook.Add( "PlayerSetHandsModel", "lf_fe_hands_select2", function( ply, ent )
 
 					local skin = ply:GetInfoNum( "cl_playerhandsskin", 0 )
 					ent:SetSkin( skin )
-	
+
 					local groups = ply:GetInfo( "cl_playerhandsbodygroups" )
 					if ( groups == nil ) then groups = "" end
 					local groups = string.Explode( " ", groups )
@@ -311,7 +311,7 @@ hook.Add( "PlayerSetHandsModel", "lf_fe_hands_select2", function( ply, ent )
 						local v = tonumber( groups[ k + 1 ] ) or 0
 						ent:SetBodygroup( k, v )
 					end
-					
+
 				end
 			end)
 		end
@@ -338,7 +338,7 @@ local function ToggleForce()
 	else
 		CurrentPlySetModel = SetMDL
 	end
-	
+
 	if GetConVar( "sv_playermodel_selector_force" ):GetBool() then
 		plymeta.SetModel = ForceSetModel
 	else
@@ -351,11 +351,11 @@ hook.Add( "Initialize", "lf_playermodel_force_hook2", function( ply )
 	if file.Exists( "autorun/sh_legs.lua", "LUA" ) then addon_legs = true end
 	--if file.Exists( "autorun/tfa_vox_loader.lua", "LUA" ) then addon_vox = true end
 	if TFAVOX_Models then InitVOX() end
-	
+
 	local try = 0
-	
+
 	ToggleForce()
-	
+
 	timer.Create( "lf_playermodel_force_timer", 5, 0, function()
 		if plymeta.SetModel == ForceSetModel or not GetConVar( "sv_playermodel_selector_force" ):GetBool() then
 			timer.Remove( "lf_playermodel_force_timer" )
@@ -376,7 +376,7 @@ end
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
 if CLIENT then
-	
+
 
 
 local Version = "3.3, Fesiug's Edit"
@@ -495,6 +495,20 @@ local myMat2 = CreateMaterial( "HandIconGenerator_RTMat", "UnlitGeneric", {
 local matshiny = Material("models/shiny")
 local hasbgs = Material("eps/hasbgs4.png", "mips smooth") -- or hasbgs3   idk which better
 
+local modelWhitelist = {
+	["models/player/rblx/robloxian2007_hatset1.mdl"] = true,
+	["models/player/rblx/robloxian2007_hatset2.mdl"] = true,
+	["models/player/rblx/robloxian2007_hatset3.mdl"] = true,
+	["models/player/rblx/robloxian2007_hatset4.mdl"] = true,
+	["models/player/rblx/robloxian2007_hatset5.mdl"] = true,
+	["models/player/rblx/robloxian2007_hatset6.mdl"] = true,
+	["models/player/rblx/robloxian2007_hatset7.mdl"] = true,
+	["models/player/rblx/robloxian2007_hatset8.mdl"] = true,
+	["models/player/rblx/robloxian2007_hatset9.mdl"] = true,
+
+	["models/player/rblx/robloxian2007_players.mdl"] = true,
+	["models/player/rblx/robloxian2007_zombie.mdl"] = true,
+}
 
 function Menu.UpdateFromConvars()
 	-- wah wah dont error ples
@@ -529,12 +543,12 @@ function Menu.Setup()
 	Frame.Paint = function( self, w, h )
 		draw.RoundedBox( 10, 0, 0, w, h, Color( r, g, b, a ) ) return true
 	end
-	
+
 	Frame.lblTitle:SetTextColor( Color( 0, 0, 0, 255 ) )
 	Frame.lblTitle.Paint = function ( self, w, h )
 		draw.SimpleTextOutlined( Frame.lblTitle:GetText(), "DermaDefaultBold", 1, 2, Color( 255, 255, 255, 255), 0, 0, 1, Color( 0, 0, 0, 255) ) return true
 	end
-	
+
 	Frame.btnMinim:SetEnabled( true )
 	Frame.btnMinim.DoClick = function()
 		Frame:SetVisible( false )
@@ -615,14 +629,14 @@ function Menu.Setup()
 		gui.OpenURL( "https://steamcommunity.com/sharedfiles/filedetails/?id=2257795841" )
 		SetClipboardText( "https://steamcommunity.com/sharedfiles/filedetails/?id=2257795841" )
 	end
-	
+
 	Menu.ApplyButton = Frame:Add( "DButton" )
 	Menu.ApplyButton:SetSize( 120, 30 )
 	Menu.ApplyButton:SetPos( fw - 560, 30 )
 	Menu.ApplyButton:SetText( "Apply playermodel" )
 	Menu.ApplyButton:SetEnabled( LocalPlayer():IsAdmin() or GetConVar( "sv_playermodel_selector_instantly" ):GetBool() )
 	Menu.ApplyButton.DoClick = LoadPlayerModel
-	
+
 	Menu.ResetButton = Frame:Add( "DButton" )
 	Menu.ResetButton:SetSize( 40, 20 )
 	Menu.ResetButton:SetPos( 5, fh - 25 )
@@ -637,7 +651,7 @@ function Menu.Setup()
 		currentanim = (currentanim + 1) % (#default_animations)
 		Menu.PlayPreviewAnimation( mdl, LocalPlayer():GetInfo( "cl_playermodel" ) )
 	end
-	
+
 	Menu.Right = Frame:Add( "DPropertySheet" )
 	Menu.Right:Dock( RIGHT )
 	Menu.Right:SetSize( 430, 0 )
@@ -645,34 +659,34 @@ function Menu.Setup()
 	Menu.Right.OnActiveTabChanged = function( self, oldTab, newTab )
 		timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 	end
-		
+
 		local modeltab = Menu.Right:Add( "DPropertySheet" )
 		Menu.Right:AddSheet( "Model", modeltab, "icon16/user.png" )
-		
+
 			local t = modeltab:Add( "DLabel" )
 			t:SetPos( 129, 1 )
 			--t:SetSize( 100, 20 )
 			t:SetText( "Search:" )
-			
+
 			Menu.ModelFilter = modeltab:Add( "DTextEntry" )
 			Menu.ModelFilter:SetPos( 168, 1 )
 			Menu.ModelFilter:SetSize( 246, 20 )
 			Menu.ModelFilter:SetUpdateOnType( true )
 			Menu.ModelFilter.OnValueChange = function() Menu.ModelPopulate() end
-			
+
 			local ModelScroll = modeltab:Add( "DScrollPanel" )
 			modeltab:AddSheet( "Icons", ModelScroll, "icon16/application_view_tile.png" )
 			ModelScroll:DockMargin( 2, 0, 2, 2 )
 			ModelScroll:Dock( FILL )
-			
+
 			local ModelIconLayout = ModelScroll:Add( "DIconLayout" )
 			ModelIconLayout:SetSpaceX( 2 )
 			ModelIconLayout:SetSpaceY( 2 )
 			ModelIconLayout:Dock( FILL )
-			
+
 			local modelicons = { }
-			
-			
+
+
 			local ModelList = modeltab:Add( "DListView" )
 			modeltab:AddSheet( "Table", ModelList, "icon16/application_view_list.png" )
 			ModelList:DockMargin( 5, 0, 5, 5 )
@@ -693,16 +707,16 @@ function Menu.Setup()
 				RunConsoleCommand( "cl_playerhandsskin", "0" )
 				timer.Simple( 0.3, function() Menu.UpdateFromConvars() end )
 			end
-			
+
 			local AllModels = player_manager.AllValidModels()
-			
+
 			function Menu.ModelPopulate()
-				
+
 				ModelIconLayout:Clear()
 				ModelList:Clear()
-				
+
 				local ModelFilter = Menu.ModelFilter:GetValue() or nil
-				
+
 				local function IsInFilter( name )
 					if not ModelFilter or ModelFilter == "" then
 						return true
@@ -716,9 +730,10 @@ function Menu.Setup()
 						return true
 					end
 				end
-				
+
 				for name, model in SortedPairs( AllModels ) do
-					
+					if ( !modelWhitelist[model] ) then continue end
+
 					if IsInFilter( name ) then
 						if GetConVar( "cl_playermodel_selector_ignorehands" ):GetBool() and player_manager.TranslatePlayerHands(name).model == model then continue end -- No
 
@@ -738,47 +753,47 @@ function Menu.Setup()
 							RunConsoleCommand( "cl_playerhandsskin", "0" )
 							timer.Simple( 0.3, function() Menu.UpdateFromConvars() end )
 						end
-						
+
 						ModelList:AddLine( name, model )
-						
+
 					end
-					
+
 				end
-				
+
 			end
-			
+
 			Menu.ModelPopulate()
-			
+
 -------------------------------------------------------------
 		local handtab = Menu.Right:Add( "DPropertySheet" )
 		local htb = Menu.Right:AddSheet( "Hands", handtab, "icon16/attach.png" )
 
 		htb.Tab.IsHandsTab = true
-		
+
 		local t = handtab:Add( "DLabel" )
 			t:SetPos( 129, 1 )
 			--t:SetSize( 100, 20 )
 			t:SetText( "Search:" )
-			
+
 			Menu.HandsFilter = handtab:Add( "DTextEntry" )
 			Menu.HandsFilter:SetPos( 168, 1 )
 			Menu.HandsFilter:SetSize( 246, 20 )
 			Menu.HandsFilter:SetUpdateOnType( true )
 			Menu.HandsFilter.OnValueChange = function() Menu.HandsPopulate() end
-			
+
 			local ModelScroll = handtab:Add( "DScrollPanel" )
 			handtab:AddSheet( "Icons", ModelScroll, "icon16/application_view_tile.png" )
 			ModelScroll:DockMargin( 2, 0, 2, 2 )
 			ModelScroll:Dock( FILL )
-			
+
 			local ModelIconLayout = ModelScroll:Add( "DIconLayout" )
 			ModelIconLayout:SetSpaceX( 2 )
 			ModelIconLayout:SetSpaceY( 2 )
 			ModelIconLayout:Dock( FILL )
-			
+
 			local modelicons_forhands = { }
-			
-			
+
+
 			local ModelList = handtab:Add( "DListView" )
 			handtab:AddSheet( "Table", ModelList, "icon16/application_view_list.png" )
 			ModelList:DockMargin( 5, 0, 5, 5 )
@@ -795,17 +810,17 @@ function Menu.Setup()
 				RunConsoleCommand( "cl_playerhandsskin", "0" )
 				timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 			end
-			
+
 			local AllModels = player_manager.AllValidModels()
 			--AllModels["AbsolutelyNone"] = ""
 			--PrintTable(AllModels)
-			
+
 			function Menu.HandsPopulate()
 				ModelIconLayout:Clear()
 				ModelList:Clear()
-				
+
 				local ModelFilter = Menu.HandsFilter:GetValue() or nil
-				
+
 				local function IsInFilter( name )
 					if not ModelFilter or ModelFilter == "" then
 						return true
@@ -819,7 +834,7 @@ function Menu.Setup()
 						return true
 					end
 				end
-				
+
 				local icon = ModelIconLayout:Add( "SpawnIcon" )
 				icon:SetSize( 64, 64 )
 				icon:SetSpawnIcon( "icon64/playermodel.png" )
@@ -831,11 +846,11 @@ function Menu.Setup()
 					RunConsoleCommand( "cl_playerhandsskin", "0" )
 					timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 				end
-				
+
 				ModelList:AddLine( name, model )
 
 				local exister = {}
-				
+
 				for name, model in SortedPairs( AllModels ) do
 					if IsInFilter( name ) then
 						local result = player_manager.TranslatePlayerHands( name )
@@ -855,7 +870,7 @@ function Menu.Setup()
 							return true
 						end
 						table.insert( modelicons_forhands, icon )
-						
+
 						function icon:MakeHandIcon()
 							if !self.ResultList then print("EPS Hands: Result list missing.") return end
 
@@ -896,7 +911,7 @@ function Menu.Setup()
 										pos = Vector( 0, 32, -64 ),
 									},
 								}
-								
+
 								render.SetLocalModelLights(CL_SHIRT)
 								-- render.Clear(0, 0, 0, 0, true, true)
 								render.Clear(0, 0, 0, 0)
@@ -909,7 +924,7 @@ function Menu.Setup()
 								render.SetColorModulation(1, 1, 1)
 								render.MaterialOverride(matshiny)
 								render.OverrideColorWriteEnable(true, false)
-								
+
 								cam.Start3D( cam_pos, cam_ang, cam_fov, 0, 0, 64, 64, 0.1, 1000 )
 									CL_FISTS:SetupBones()
 									CL_REALHANDS:SetupBones()
@@ -1027,14 +1042,14 @@ function Menu.Setup()
 				--	DisableClipping( old )
 				--end
 			end
-			
+
 			Menu.HandsPopulate()
 --------------------------------------------------------
-		
+
 		local favorites = Menu.Right:Add( "DPanel" )
 		Menu.Right:AddSheet( "Favorites", favorites, "icon16/star.png" )
 		favorites:DockPadding( 8, 8, 8, 8 )
-		
+
 		local FavList = favorites:Add( "DListView" )
 		FavList:Dock( FILL )
 		FavList:SetMultiSelect( true )
@@ -1053,7 +1068,7 @@ function Menu.Setup()
 				end )
 			end
 		end
-		
+
 		function Menu.FavPopulate()
 			FavList:Clear()
 			for k, v in pairs( Favorites ) do
@@ -1062,7 +1077,7 @@ function Menu.Setup()
 			FavList:SortByColumn( 1 )
 		end
 		Menu.FavPopulate()
-		
+
 		local b = favorites:Add( "DButton" )
 		b:Dock( TOP )
 		b:SetHeight( 25 )
@@ -1081,20 +1096,20 @@ function Menu.Setup()
 				end )
 			end
 		end
-		
+
 		local t = favorites:Add( "DLabel" )
 		t:Dock( BOTTOM )
 		t:SetAutoStretchVertical( true )
 		t:SetText( "Here you can save your favorite playermodel combinations. To do this:\n1. Select a model and setup the skin and bodygroups as you wish.\n2. Enter a unique name into the textfield and click \"Add new favorite\".\n3. Load your favorite by selecting it in the list below and clicking \"Load selected\".\nYou can also apply existing favorites by console command:\nplayermodel_loadfav \"the favorite's name\"" )
 		t:SetDark( true )
 		t:SetWrap( true )
-		
+
 		local control = favorites:Add( "DPanel" )
 		control:Dock( BOTTOM )
 		control:DockMargin( 0, 10, 0, 0 )
 		control:SetSize( 0, 60 )
 		control:SetPaintBackground( false )
-		
+
 		function Menu.FavAdd( name )
 			Favorites[name] = { }
 			Favorites[name].model = LocalPlayer():GetInfo( "cl_playermodel" )
@@ -1103,11 +1118,11 @@ function Menu.Setup()
 			file.Write( "lf_playermodel_selector/cl_favorites.txt", util.TableToJSON( Favorites, true ) )
 			Menu.FavPopulate()
 		end
-		
+
 		local FavEntry = control:Add( "DTextEntry" )
 		FavEntry:SetPos( 0, 0 )
 		FavEntry:SetSize( 395, 20 )
-		
+
 		local b = control:Add( "DButton" )
 		b:SetPos( 0, 30 )
 		b:SetSize( 125, 20 )
@@ -1117,7 +1132,7 @@ function Menu.Setup()
 			if name == "" then return end
 			Menu.FavAdd( name )
 		end
-		
+
 		local b = control:Add( "DButton" )
 		b:SetPos( 135, 30 )
 		b:SetSize( 125, 20 )
@@ -1129,7 +1144,7 @@ function Menu.Setup()
 			local name = tostring( sel[1]:GetValue(1) )
 			Menu.FavAdd( name )
 		end
-		
+
 		local b = control:Add( "DButton" )
 		b:SetPos( 270, 30 )
 		b:SetSize( 125, 20 )
@@ -1143,8 +1158,8 @@ function Menu.Setup()
 			file.Write( "lf_playermodel_selector/cl_favorites.txt", util.TableToJSON( Favorites, true ) )
 			Menu.FavPopulate()
 		end
-		
-		
+
+
 		local bdcontrols = Menu.Right:Add( "DPanel" )
 		local bgtab = Menu.Right:AddSheet( "Bodygroups", bdcontrols, "icon16/group.png" )
 		bdcontrols:DockPadding( 8, 8, 8, 8 )
@@ -1152,7 +1167,7 @@ function Menu.Setup()
 		local bdcontrolspanel = bdcontrols:Add( "DPanelList" )
 		bdcontrolspanel:EnableVerticalScrollbar( true )
 		bdcontrolspanel:Dock( FILL )
-		
+
 		-- Hands
 		local h__bdcontrols = Menu.Right:Add( "DPanel" )
 		local h__bgtab = Menu.Right:AddSheet( "Handgroups", h__bdcontrols, "icon16/group_link.png" )
@@ -1163,17 +1178,17 @@ function Menu.Setup()
 		local h__bdcontrolspanel = h__bdcontrols:Add( "DPanelList" )
 		h__bdcontrolspanel:EnableVerticalScrollbar( true )
 		h__bdcontrolspanel:Dock( FILL )
-		
-		
+
+
 		local flexcontrols = Menu.Right:Add( "DPanel" )
 		local flextab = Menu.Right:AddSheet( "Flexes", flexcontrols, "icon16/emoticon_wink.png" )
 		flexcontrols:DockPadding( 8, 8, 8, 8 )
-		
+
 		local flexcontrolspanel = flexcontrols:Add( "DPanelList" )
 		flexcontrolspanel:EnableVerticalScrollbar( true )
 		flexcontrolspanel:Dock( FILL )
-		
-		
+
+
 		local controls = Menu.Right:Add( "DPanel" )
 		Menu.Right:AddSheet( "Colors", controls, "icon16/color_wheel.png" )
 		controls:DockPadding( 8, 8, 8, 8 )
@@ -1201,7 +1216,7 @@ function Menu.Setup()
 		wepcol:Dock( TOP )
 		wepcol:SetSize( 200, ( fh - 160) / 2 )
 		wepcol:SetVector( Vector( GetConVar( "cl_weaponcolor" ):GetString() ) )
-		
+
 		local b = controls:Add( "DButton" )
 		b:DockMargin( 0, 8, 0, 0 )
 		b:Dock( TOP )
@@ -1213,19 +1228,19 @@ function Menu.Setup()
 			RunConsoleCommand( "cl_playercolor", "0.24 0.34 0.41" )
 			RunConsoleCommand( "cl_weaponcolor", "0.30 1.80 2.10" )
 		end
-		
-		
+
+
 		local moretab = Menu.Right:Add( "DPropertySheet" )
 		Menu.Right:AddSheet( "Settings", moretab, "icon16/key.png" )
-			
-			
+
+
 			local panel = moretab:Add( "DPanel" )
 			moretab:AddSheet( "Client", panel, "icon16/status_online.png" )
 			panel:DockPadding( 10, 10, 10, 10 )
-			
+
 			local panel = panel:Add( "DScrollPanel" )
 			panel:Dock( FILL )
-			
+
 			local c = panel:Add( "DCheckBoxLabel" )
 			c.cvar = "cl_playermodel_selector_force"
 			c:Dock( TOP )
@@ -1236,7 +1251,7 @@ function Menu.Setup()
 			c.OnChange = function( p, v )
 				RunConsoleCommand( c.cvar, v == true and "1" or "0" )
 			end
-			
+
 			local t = panel:Add( "DLabel" )
 			t:Dock( TOP )
 			t:DockMargin( 0, 0, 0, 20 )
@@ -1244,7 +1259,7 @@ function Menu.Setup()
 			t:SetText( "If enabled, your selected playermodel will be protected. No other function will be able to change your playermodel anymore." )
 			t:SetDark( true )
 			t:SetWrap( true )
-			
+
 			local c = panel:Add( "DCheckBoxLabel" )
 			c.cvar = "cl_playermodel_selector_bgcolor_custom"
 			c:Dock( TOP )
@@ -1256,7 +1271,7 @@ function Menu.Setup()
 			c.OnChange = function( p, v )
 				RunConsoleCommand( c.cvar, v == true and "1" or "0" )
 			end
-			
+
 			local t = panel:Add( "DLabel" )
 			t:Dock( TOP )
 			t:DockMargin( 0, 0, 0, 20 )
@@ -1264,7 +1279,7 @@ function Menu.Setup()
 			t:SetText( "If enabled, your selected player color will be used as the menu background. If disabled, the background will be grey." )
 			t:SetDark( true )
 			t:SetWrap( true )
-			
+
 			local c = panel:Add( "DCheckBoxLabel" )
 			c.cvar = "cl_playermodel_selector_bgcolor_trans"
 			c:Dock( TOP )
@@ -1276,7 +1291,7 @@ function Menu.Setup()
 			c.OnChange = function( p, v )
 				RunConsoleCommand( c.cvar, v == true and "1" or "0" )
 			end
-			
+
 			local t = panel:Add( "DLabel" )
 			t:Dock( TOP )
 			t:DockMargin( 0, 0, 0, 20 )
@@ -1284,7 +1299,7 @@ function Menu.Setup()
 			t:SetText( "If enabled, the menu backgroup will be transparent. If disabled, the background will be opaque." )
 			t:SetDark( true )
 			t:SetWrap( true )
-			
+
 			local c = panel:Add( "DCheckBoxLabel" )
 			c.cvar = "cl_playermodel_selector_ignorehands"
 			c:Dock( TOP )
@@ -1305,7 +1320,7 @@ function Menu.Setup()
 			t:SetText( "If enabled, \"playermodels\" that are nothing but floating pair of hands will be not shown in list of available playermodels. Disable to see all registered playermodels." )
 			t:SetDark( true )
 			t:SetWrap( true )
-			
+
 			local c = panel:Add( "DCheckBoxLabel" )
 			c.cvar = "cl_playermodel_selector_unlockflexes"
 			c:Dock( TOP )
@@ -1318,7 +1333,7 @@ function Menu.Setup()
 				RunConsoleCommand( c.cvar, v == true and "1" or "0" )
 				timer.Simple( 0, function() Menu.RebuildBodygroupTab() end )
 			end
-			
+
 			local t = panel:Add( "DLabel" )
 			t:Dock( TOP )
 			t:DockMargin( 0, 0, 0, 20 )
@@ -1326,7 +1341,7 @@ function Menu.Setup()
 			t:SetText( "This allows you to manipulate flexes on your playermodel. However, flex manipulation is not really made for playermodels and will cause issues. This includes the following:\n- Eye blinking no longer working.\n- Faces might be distorted unless the flexes are corrected manually.\n- Might break the faces of incompatible playermodels completely.\n- Even if you put all flexes to default value, the engine still considers them as manipulated. Models with problems won't be fixed.\nYou must switch your model once, for the tab to appear!" )
 			t:SetDark( true )
 			t:SetWrap( true )
-			
+
 			local b = panel:Add( "DButton" )
 			b:Dock( TOP )
 			b:DockMargin( 0, 0, 270, 5 )
@@ -1344,7 +1359,7 @@ function Menu.Setup()
 					end
 				end
 			end
-			
+
 			local t = panel:Add( "DLabel" )
 			t:Dock( TOP )
 			t:DockMargin( 0, 0, 0, 20 )
@@ -1352,24 +1367,24 @@ function Menu.Setup()
 			t:SetText( "Forces all playermodel icons to be re-rendered. Useful if the icons are outdated after custom models changed their appearance. This may take a while, depending on the number of models and your PC's speed.\nThis also regenerates the hand's icons." )
 			t:SetDark( true )
 			t:SetWrap( true )
-			
-			
+
+
 			if LocalPlayer():IsAdmin() then
-				
+
 				local panel = moretab:Add( "DPanel" )
 				moretab:AddSheet( "Server", panel, "icon16/world.png" )
 				panel:DockPadding( 10, 10, 10, 10 )
-				
+
 				local panel = panel:Add( "DScrollPanel" )
 				panel:Dock( FILL )
-				
+
 				local function ChangeCVar( p, v )
 					net.Start("lf_playermodel_cvar_change")
 					net.WriteString( p.cvar )
 					net.WriteString( v == true and "1" or "0" )
 					net.SendToServer()
 				end
-				
+
 				local c = panel:Add( "DCheckBoxLabel" )
 				c.cvar = "sv_playermodel_selector_force"
 				c:Dock( TOP )
@@ -1378,7 +1393,7 @@ function Menu.Setup()
 				c:SetText( "Enable playermodel enforcement" )
 				c:SetDark( true )
 				c.OnChange = ChangeCVar
-				
+
 				local t = panel:Add( "DLabel" )
 				t:Dock( TOP )
 				t:DockMargin( 0, 0, 0, 20 )
@@ -1386,7 +1401,7 @@ function Menu.Setup()
 				t:SetText( "If enabled, selected playermodels will be enforced and protected. No gamemodes, maps or addons can overwrite them anymore. Players can toggle this function individually, using the checkbox on top of the menu.\nIf disabled, only the manual button works outside of Sandbox." )
 				t:SetDark( true )
 				t:SetWrap( true )
-				
+
 				local c = panel:Add( "DCheckBoxLabel" )
 				c.cvar = "sv_playermodel_selector_instantly"
 				c:Dock( TOP )
@@ -1395,7 +1410,7 @@ function Menu.Setup()
 				c:SetText( "Allow instant changes" )
 				c:SetDark( true )
 				c.OnChange = ChangeCVar
-				
+
 				local t = panel:Add( "DLabel" )
 				t:Dock( TOP )
 				t:DockMargin( 0, 0, 0, 20 )
@@ -1403,7 +1418,7 @@ function Menu.Setup()
 				t:SetText( "If enabled, players can apply their changes instantly instead of having to respawn." )
 				t:SetDark( true )
 				t:SetWrap( true )
-				
+
 				local c = panel:Add( "DCheckBoxLabel" )
 				c.cvar = "sv_playermodel_selector_flexes"
 				c:Dock( TOP )
@@ -1412,7 +1427,7 @@ function Menu.Setup()
 				c:SetText( "Allow players to change flexes" )
 				c:SetDark( true )
 				c.OnChange = ChangeCVar
-				
+
 				local t = panel:Add( "DLabel" )
 				t:Dock( TOP )
 				t:DockMargin( 0, 0, 0, 20 )
@@ -1420,7 +1435,7 @@ function Menu.Setup()
 				t:SetText( "If enabled, players can change the flexes for their playermodels. This will break player blinking and may cause other issues. Enable at own risk. Players can only reset their flexes by disconnecting." )
 				t:SetDark( true )
 				t:SetWrap( true )
-				
+
 				local c = panel:Add( "DCheckBoxLabel" )
 				c.cvar = "sv_playermodel_selector_gamemodes"
 				c:Dock( TOP )
@@ -1429,7 +1444,7 @@ function Menu.Setup()
 				c:SetText( "Enable in all gamemodes" )
 				c:SetDark( true )
 				c.OnChange = ChangeCVar
-				
+
 				local t = panel:Add( "DLabel" )
 				t:Dock( TOP )
 				t:DockMargin( 0, 0, 0, 20 )
@@ -1437,7 +1452,7 @@ function Menu.Setup()
 				t:SetText( "If enabled, the PlayerModel Selector will be available for all players in every gamemode. If disabled, only Admins can use it outside of Sandbox." )
 				t:SetDark( true )
 				t:SetWrap( true )
-				
+
 				local s = panel:Add( "DNumSlider" )
 				s.cvar = "sv_playermodel_selector_limit"
 				s:Dock( TOP )
@@ -1453,7 +1468,7 @@ function Menu.Setup()
 					net.WriteString( tostring( math.floor( val:GetValue(1) ) ) )
 					net.SendToServer()
 				end
-				
+
 				local t = panel:Add( "DLabel" )
 				t:Dock( TOP )
 				t:DockMargin( 0, 0, 0, 20 )
@@ -1461,19 +1476,19 @@ function Menu.Setup()
 				t:SetText( "Timelimit in seconds that players have to wait, before they can use the instant change function again. Set to 0 to disable." )
 				t:SetDark( true )
 				t:SetWrap( true )
-				
-				
+
+
 				local panel = moretab:Add( "DPanel" )
 				moretab:AddSheet( "GM Blacklist", panel, "icon16/delete.png" )
 				panel:DockPadding( 10, 10, 10, 10 )
-				
+
 				local Blacklist = panel:Add( "DListView" )
 				Blacklist:Dock( LEFT )
 				Blacklist:DockMargin( 0, 0, 20, 0 )
 				Blacklist:SetWidth( 150 )
 				Blacklist:SetMultiSelect( true )
 				Blacklist:AddColumn( "Blacklisted gamemodes" )
-				
+
 				net.Receive("lf_playermodel_blacklist", function()
 					local tbl = net.ReadTable()
 					Blacklist:Clear()
@@ -1482,14 +1497,14 @@ function Menu.Setup()
 					end
 					Blacklist:SortByColumn( 1 )
 				end )
-				
+
 				function Menu.BlacklistPopulate()
 					net.Start( "lf_playermodel_blacklist" )
 					net.WriteInt( 0, 3 )
 					net.SendToServer()
 				end
 				Menu.BlacklistPopulate()
-				
+
 				local t = panel:Add( "DLabel" )
 				t:Dock( TOP )
 				t:DockMargin( 0, 0, 0, 20 )
@@ -1497,7 +1512,7 @@ function Menu.Setup()
 				t:SetText( "Here you can blacklist incompatible gamemodes.\n\nPlayers (including Admins) can't change their playermodels in those gamemodes, regardless of other settings." )
 				t:SetDark( true )
 				t:SetWrap( true )
-				
+
 				local b = panel:Add( "DButton" )
 				b:Dock( TOP )
 				b:DockMargin( 0, 0, 0, 20 )
@@ -1510,12 +1525,12 @@ function Menu.Setup()
 					net.WriteString( GAMEMODE_NAME )
 					net.SendToServer()
 				end
-				
+
 				local TextEntry = panel:Add( "DTextEntry" )
 				TextEntry:Dock( TOP )
 				TextEntry:DockMargin( 0, 0, 0, 10 )
 				TextEntry:SetHeight( 20 )
-				
+
 				local b = panel:Add( "DButton" )
 				b:Dock( TOP )
 				b:DockMargin( 0, 0, 0, 20 )
@@ -1529,7 +1544,7 @@ function Menu.Setup()
 					net.WriteString( name )
 					net.SendToServer()
 				end
-				
+
 				local b = panel:Add( "DButton" )
 				b:Dock( TOP )
 				b:DockMargin( 0, 0, 0, 0 )
@@ -1547,14 +1562,14 @@ function Menu.Setup()
 					net.WriteTable( tbl )
 					net.SendToServer()
 				end
-				
-				
+
+
 				if TFAVOX_Models then
-					
+
 					local panel = moretab:Add( "DPanel" )
 					moretab:AddSheet( "VOX", panel, "icon16/sound.png" )
 					panel:DockPadding( 10, 10, 10, 10 )
-					
+
 					local VOXlist = panel:Add( "DListView" )
 					VOXlist:Dock( TOP )
 					VOXlist:DockMargin( 0, 0, 0, 10 )
@@ -1562,7 +1577,7 @@ function Menu.Setup()
 					VOXlist:SetMultiSelect( true )
 					VOXlist:AddColumn( "PlayerModel" )
 					VOXlist:AddColumn( "assigned VOX pack" )
-					
+
 					net.Receive("lf_playermodel_voxlist", function()
 						local tbl = net.ReadTable()
 						VOXlist:Clear()
@@ -1571,34 +1586,34 @@ function Menu.Setup()
 						end
 						VOXlist:SortByColumn( 1 )
 					end )
-					
+
 					function Menu.VOXlistPopulate()
 						net.Start( "lf_playermodel_voxlist" )
 						net.WriteInt( 0, 3 )
 						net.SendToServer()
 					end
 					Menu.VOXlistPopulate()
-					
+
 					local control = panel:Add( "DPanel" )
 					control:Dock( TOP )
 					control:DockMargin( 0, 0, 0, 0 )
 					--control:SetSize( 0, 60 )
 					control:SetPaintBackground( false )
-					
+
 					local VOXinstalled = panel:Add( "DListView" )
 					VOXinstalled:Dock( TOP )
 					VOXinstalled:DockMargin( 0, 10, 0, 0 )
 					VOXinstalled:SetHeight( ( fh - 126 - 44 ) / 2 )
 					VOXinstalled:SetMultiSelect( false )
 					VOXinstalled:AddColumn( "Available VOX packs" )
-					
+
 					if istable( TFAVOX_Models ) then
 						for k, v in pairs( TFAVOX_Models ) do
 							VOXinstalled:AddLine( string.StripExtension( string.gsub( k, "models/", "", 1 ) ) )
 						end
 						VOXinstalled:SortByColumn( 1 )
 					end
-					
+
 					local b = control:Add( "DButton" )
 					b:Dock( LEFT )
 					--b:DockPadding( 100, 0, 100, 0 )
@@ -1615,7 +1630,7 @@ function Menu.Setup()
 						net.WriteString( v )
 						net.SendToServer()
 					end
-					
+
 					local b = control:Add( "DButton" )
 					b:Dock( RIGHT )
 					--b:DockPadding( 100, 0, 100, 0 )
@@ -1633,16 +1648,16 @@ function Menu.Setup()
 						net.WriteTable( tbl )
 						net.SendToServer()
 					end
-					
+
 				end
-			
+
 			end
-			
-			
+
+
 			local panel = moretab:Add( "DPanel" )
 			moretab:AddSheet( "Info", panel, "icon16/information.png" )
 			panel:DockPadding( 0, 0, 0, 0 )
-			
+
 			local t = panel:Add( "DHTML" )
 			t:Dock( FILL )
 			--t:DockMargin( 0, 0, 0, 15 )
@@ -1650,9 +1665,9 @@ function Menu.Setup()
 			t:SetAllowLua( true )
 			t:AddFunction( "url", "open", function( str ) gui.OpenURL( str ) end )
 			t:AddFunction( "url", "copy", function( str ) SetClipboardText( str ) end )
-			
+
 			local intro = [[]]
-			
+
 			t:SetHTML( [[
 				<html>
 					<head>
@@ -1733,7 +1748,7 @@ function Menu.Setup()
 					</body>
 				</html>
 			]] )
-			
+
 
 
 
@@ -1787,7 +1802,7 @@ function Menu.Setup()
 			if ( #str < pnl.typenum + 1 ) then for i = 1, pnl.typenum + 1 do str[ i ] = str[ i ] or 0 end end
 			str[ pnl.typenum + 1 ] = math.Round( val )
 			RunConsoleCommand( "cl_playerbodygroups", table.concat( str, " " ) )
-		
+
 		elseif ( pnl.type == "flex" ) then
 
 			if ( not handsTabActive ) then mdl.Entity:SetFlexWeight( pnl.typenum, math.Round( val, 2 ) ) end
@@ -1796,7 +1811,7 @@ function Menu.Setup()
 			if ( #str < pnl.typenum + 1 ) then for i = 1, pnl.typenum + 1 do str[ i ] = str[ i ] or 0 end end
 			str[ pnl.typenum + 1 ] = math.Round( val, 2 )
 			RunConsoleCommand( "cl_playerflexes", table.concat( str, " " ) )
-		
+
 		elseif ( pnl.type == "skin" ) then
 
 			if ( not handsTabActive ) then mdl.Entity:SetSkin( math.Round( val ) ) end
@@ -1810,7 +1825,7 @@ function Menu.Setup()
 			if ( #str < pnl.typenum + 1 ) then for i = 1, pnl.typenum + 1 do str[ i ] = str[ i ] or 0 end end
 			str[ pnl.typenum + 1 ] = math.Round( val )
 			RunConsoleCommand( "cl_playerhandsbodygroups", table.concat( str, " " ) )
-		
+
 		elseif ( pnl.type == "h__skin" ) then
 
 			if true or ( handsTabActive ) then mdl.EntityHands:SetSkin( math.Round( val ) ) end
@@ -1823,7 +1838,7 @@ function Menu.Setup()
 		bdcontrolspanel:Clear()
 		h__bdcontrolspanel:Clear()
 		flexcontrolspanel:Clear()
-		
+
 		bgtab.Tab:SetVisible( false )
 		h__bgtab.Tab:SetVisible( false )
 		flextab.Tab:SetVisible( false )
@@ -1840,11 +1855,11 @@ function Menu.Setup()
 			skins:SetValue( GetConVar( "cl_playerskin" ):GetInt() )
 			skins.type = "skin"
 			skins.OnValueChanged = Menu.UpdateBodyGroups
-			
+
 			bdcontrolspanel:AddItem( skins )
 
 			mdl.Entity:SetSkin( GetConVar( "cl_playerskin" ):GetInt() )
-			
+
 			bgtab.Tab:SetVisible( true )
 		end
 
@@ -1863,18 +1878,18 @@ function Menu.Setup()
 			bgroup:SetMax( mdl.Entity:GetBodygroupCount( k ) - 1 )
 			bgroup:SetValue( groups[ k + 1 ] or 0 )
 			-- bgroup.OnValueChanged = Menu.UpdateBodyGroups
-			
+
 			bdcontrolspanel:AddItem( bgroup )
 
 			local tgroup
 			local submdls = mdl.Entity:GetBodyGroups()[k+1].submodels
-			if istable(submdls) then 
+			if istable(submdls) then
 				local mdl = submdls[tonumber(groups[ k + 1 ] or 0)] or "idk"
 				tgroup = vgui.Create( "DLabel" )
 				tgroup:Dock( TOP )
 				tgroup:DockMargin(10, -15, 0, 0)
 				tgroup:SetText( Menu.MakeNiceName( mdl ))
-				
+
 				bdcontrolspanel:AddItem( tgroup )
 			end
 
@@ -1883,12 +1898,12 @@ function Menu.Setup()
 				if istable(submdls) then
 					tgroup:SetText(Menu.MakeNiceName(submdls[math.Round(val)]) or "idk")
 				end
-				
-				Menu.UpdateBodyGroups(something1, val) 
+
+				Menu.UpdateBodyGroups(something1, val)
 			end
 
 			mdl.Entity:SetBodygroup( k, groups[ k + 1 ] or 0 )
-			
+
 			bgtab.Tab:SetVisible( true )
 		end
 
@@ -1906,11 +1921,11 @@ function Menu.Setup()
 				skins:SetValue( GetConVar( "cl_playerhandsskin" ):GetInt() )
 				skins.type = "h__skin"
 				skins.OnValueChanged = Menu.UpdateBodyGroups
-				
+
 				h__bdcontrolspanel:AddItem( skins )
 
 				mdl.EntityHands:SetSkin( GetConVar( "cl_playerhandsskin" ):GetInt() )
-				
+
 				h__bgtab.Tab:SetVisible( true )
 			end
 
@@ -1929,37 +1944,37 @@ function Menu.Setup()
 				bgroup:SetMax( mdl.EntityHands:GetBodygroupCount( k ) - 1 )
 				bgroup:SetValue( groups[ k + 1 ] or 0 )
 				bgroup.OnValueChanged = Menu.UpdateBodyGroups
-				
+
 				h__bdcontrolspanel:AddItem( bgroup )
 
 				local tgroup
 				local submdls = mdl.EntityHands:GetBodyGroups()[k+1].submodels
-				if istable(submdls) then 
+				if istable(submdls) then
 					local mdl = submdls[tonumber(groups[ k + 1 ] or 0)] or "idk"
 					tgroup = vgui.Create( "DLabel" )
 					tgroup:Dock( TOP )
 					tgroup:DockMargin(10, -15, 0, 0)
 					tgroup:SetText( Menu.MakeNiceName( mdl ))
-					
+
 					h__bdcontrolspanel:AddItem( tgroup )
 				end
-	
+
 				bgroup.OnValueChanged = function(something1, val)
 					local submdls = mdl.EntityHands:GetBodyGroups()[k+1].submodels
 					if istable(submdls) then
 						tgroup:SetText(Menu.MakeNiceName(submdls[math.Round(val)]) or "idk")
 					end
-					
-					Menu.UpdateBodyGroups(something1, val) 
+
+					Menu.UpdateBodyGroups(something1, val)
 				end
-	
+
 				mdl.EntityHands:SetBodygroup( k, groups[ k + 1 ] or 0 )
-				
+
 				h__bgtab.Tab:SetVisible( true )
 			end
 		end
 		-- Hands end
-		
+
 		if GetConVar( "sv_playermodel_selector_flexes" ):GetBool() and GetConVar( "cl_playermodel_selector_unlockflexes" ):GetBool() then
 			local t = vgui.Create( "DLabel" )
 			t:Dock( TOP )
@@ -1968,7 +1983,7 @@ function Menu.Setup()
 			t:SetDark( true )
 			t:SetWrap( true )
 			flexcontrolspanel:AddItem( t )
-			
+
 			local flexes = string.Explode( " ", GetConVar( "cl_playerflexes" ):GetString() )
 			for k = 0, mdl.Entity:GetFlexNum() - 1 do
 				if ( mdl.Entity:GetFlexNum( k ) <= 1 ) then continue end
@@ -1988,19 +2003,19 @@ function Menu.Setup()
 				flex:SetMax( vmax )
 				flex:SetValue( flexes[ k + 1 ] or default )
 				flex.OnValueChanged = Menu.UpdateBodyGroups
-				
+
 				flexcontrolspanel:AddItem( flex )
 
 				mdl.Entity:SetFlexWeight( k, flexes[ k + 1 ] or default )
-				
+
 				flextab.Tab:SetVisible( true )
 			end
 		end
-		
+
 		Menu.Right.tabScroller:InvalidateLayout( true )
 		Menu.Right:InvalidateLayout( true )
 	end
-	
+
 	local handsAnimModel = Model( "models/weapons/chand_checker.mdl" )
 
 	function Menu.UpdateFromConvars()
@@ -2079,7 +2094,7 @@ function Menu.Setup()
 		self.PressX, self.PressY = gui.MousePos()
 		self.Pressed = button
 	end
-	
+
 	function mdl:OnMouseWheeled( delta )
 		self.WheelD = delta * -5
 		self.Wheeled = true
@@ -2128,10 +2143,10 @@ function Menu.Setup()
 		if ( self.Pressed == MOUSE_LEFT ) then
 			local mx, my = gui.MousePos()
 			self.Angles = self.Angles - Angle( 0, ( self.PressX or mx ) - mx, 0 )
-			
+
 			self.PressX, self.PressY = gui.MousePos()
 		end
-		
+
 		if ( self.Pressed == MOUSE_RIGHT ) then
 			local mx, my = gui.MousePos()
 			self.AngleOffset = Angle( ( self.PressY*(0.15) or my*(0.15) ) - my*(0.15), 0, ( self.PressX*(-0.15) or mx*(-0.15) ) - mx*(-0.15) )
@@ -2139,14 +2154,14 @@ function Menu.Setup()
 
 			self.PressX, self.PressY = gui.MousePos()
 		end
-		
+
 		if ( self.Pressed == MOUSE_MIDDLE ) then
 			local mx, my = gui.MousePos()
 			self.Pos = self.Pos - Vector( 0, ( self.PressX*(0.15) or mx*(0.15) ) - mx*(0.15), ( self.PressY*(-0.15) or my*(-0.15) ) - my*(-0.15) )
-			
+
 			self.PressX, self.PressY = gui.MousePos()
 		end
-		
+
 		if ( self.Wheeled ) then
 			self.Wheeled = false
 			self.Pos = self.Pos - Vector( self.WheelD, 0, 0 )
