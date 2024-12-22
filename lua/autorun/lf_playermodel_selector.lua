@@ -46,12 +46,12 @@ cvars.AddChangeCallback( "sv_playermodel_selector_debug", function() debugmode =
 --net.Receive("lf_playermodel_client_sync", function( len, ply ) client_sync( ply ) end )
 
 net.Receive("lf_playermodel_cvar_change", function( len, ply )
-	if ply:IsValid() and ply:IsPlayer() then
-		local cvar = net.ReadString()
-		if !convars[cvar] then ply:Kick("Illegal convar change") return end
-		if !ply:IsAdmin() then return end
-		RunConsoleCommand( cvar, net.ReadString() )
-	end
+	if !ply:IsAdmin() then return end
+
+	local cvar = net.ReadString()
+	if !convars[cvar] then ply:Kick("Illegal convar change") return end
+
+	RunConsoleCommand( cvar, net.ReadString() )
 end )
 
 
@@ -76,28 +76,29 @@ if file.Exists( "lf_playermodel_selector/sv_blacklist.txt", "DATA" ) then
 end
 
 net.Receive("lf_playermodel_blacklist", function( len, ply )
-	if ply:IsValid() and ply:IsPlayer() and ply:IsAdmin() then
-		local mode = net.ReadInt( 3 )
-		if mode == 1 then
-			local gamemode = net.ReadString()
-			if gamemode != "sandbox" then
-				Blacklist[gamemode] = true
-				file.Write( "lf_playermodel_selector/sv_blacklist.txt", util.TableToJSON( Blacklist, true ) )
-			end
-		elseif mode == 2 then
-			local tbl = net.ReadTable()
-			if istable( tbl ) then
-				for k, v in pairs( tbl ) do
-					local name = tostring( v )
-					Blacklist[name] = nil
-				end
-				file.Write( "lf_playermodel_selector/sv_blacklist.txt", util.TableToJSON( Blacklist, true ) )
-			end
+	if ( !ply:IsAdmin() ) then return end
+
+	local mode = net.ReadInt( 3 )
+	if mode == 1 then
+		local gamemode = net.ReadString()
+		if gamemode != "sandbox" then
+			Blacklist[gamemode] = true
+			file.Write( "lf_playermodel_selector/sv_blacklist.txt", util.TableToJSON( Blacklist, true ) )
 		end
-		net.Start("lf_playermodel_blacklist")
-		net.WriteTable( Blacklist )
-		net.Send( ply )
+	elseif mode == 2 then
+		local tbl = net.ReadTable()
+		if istable( tbl ) then
+			for k, v in pairs( tbl ) do
+				local name = tostring( v )
+				Blacklist[name] = nil
+			end
+			file.Write( "lf_playermodel_selector/sv_blacklist.txt", util.TableToJSON( Blacklist, true ) )
+		end
 	end
+
+	net.Start("lf_playermodel_blacklist")
+	net.WriteTable( Blacklist )
+	net.Send( ply )
 end )
 
 local VOXlist = { }
@@ -119,40 +120,41 @@ local function InitVOX()
 end
 
 net.Receive("lf_playermodel_voxlist", function( len, ply )
-	if TFAVOX_Models and ply:IsValid() and ply:IsPlayer() and ply:IsAdmin() then
-		local function tfa_reload()
-			TFAVOX_Packs_Initialize()
-			TFAVOX_PrecachePacks()
-			for k,v in pairs( player.GetAll() ) do
-				print("Resetting the VOX of " .. v:Nick() )
-				if IsValid(v) then TFAVOX_Init(v,true,true) end
-			end
+	if ( !ply:IsAdmin() ) then return end
+	if !TFAVOX_Models then return end
+
+	local function tfa_reload()
+		TFAVOX_Packs_Initialize()
+		TFAVOX_PrecachePacks()
+		for k, v in player.Iterator() do
+			print("Resetting the VOX of " .. v:Nick() )
+			if IsValid(v) then TFAVOX_Init(v,true,true) end
 		end
-		local mode = net.ReadInt( 3 )
-		if mode == 1 then
-			local k = net.ReadString()
-			local v = net.ReadString()
-			VOXlist[k] = v
-			file.Write( "lf_playermodel_selector/sv_voxlist.txt", util.TableToJSON( VOXlist, true ) )
-			--TFAVOX_Models = { }
-			tfa_reload()
-		elseif mode == 2 then
-			local tbl = net.ReadTable()
-			if istable( tbl ) then
-				for k, v in pairs( tbl ) do
-					local name = tostring( v )
-					VOXlist[name] = nil
-					if istable( TFAVOX_Models ) then TFAVOX_Models[name] = nil end
-				end
-				file.Write( "lf_playermodel_selector/sv_voxlist.txt", util.TableToJSON( VOXlist, true ) )
-				--TFAVOX_Models = { }
-				tfa_reload()
-			end
-		end
-		net.Start("lf_playermodel_voxlist")
-		net.WriteTable( VOXlist )
-		net.Send( ply )
 	end
+
+	local mode = net.ReadInt( 3 )
+	if mode == 1 then
+		local k = net.ReadString()
+		local v = net.ReadString()
+		VOXlist[k] = v
+		file.Write( "lf_playermodel_selector/sv_voxlist.txt", util.TableToJSON( VOXlist, true ) )
+		tfa_reload()
+	elseif mode == 2 then
+		local tbl = net.ReadTable()
+		if istable( tbl ) then
+			for k, v in pairs( tbl ) do
+				local name = tostring( v )
+				VOXlist[name] = nil
+				if istable( TFAVOX_Models ) then TFAVOX_Models[name] = nil end
+			end
+			file.Write( "lf_playermodel_selector/sv_voxlist.txt", util.TableToJSON( VOXlist, true ) )
+			tfa_reload()
+		end
+	end
+
+	net.Start("lf_playermodel_voxlist")
+	net.WriteTable( VOXlist )
+	net.Send( ply )
 end )
 
 
@@ -759,7 +761,7 @@ function Menu.Setup()
 						return true
 					end
 				end
-					
+
 				for name, model in SortedPairs( AllModels ) do
 					if ( !modelWhitelist[model] ) then continue end
 
@@ -1528,7 +1530,7 @@ function Menu.Setup()
 					if text == "" then return 0 end
 					return #string.Explode("\n", text)
 				end
-				
+
 				if tempText ~= "" then
 					TextEntry:SetValue(tempText)
 					local text = TextEntry:GetValue()
