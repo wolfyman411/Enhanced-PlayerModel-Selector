@@ -530,7 +530,6 @@ function populateWhiteList()
 	end
 
 	local lines = string.Explode("\n", LoadTextFromFile())
-	modelWhitelist = {}
 
 	for _, line in ipairs(lines) do
         local model = string.Trim(line)
@@ -764,9 +763,9 @@ function Menu.Setup()
 				end
 
 				for name, model in SortedPairs( AllModels ) do
-					if ( !modelWhitelist[model] ) then continue end
+					if ( #modelWhitelist > 0 and !modelWhitelist[model] and util.IsValidModel(model) ) then continue end
 
-					if IsInFilter( name ) or #modelWhitelist < 1 then
+					if IsInFilter( name ) then
 						if GetConVar( "cl_playermodel_selector_ignorehands" ):GetBool() and player_manager.TranslatePlayerHands(name).model == model then continue end -- No
 
 						local icon = ModelIconLayout:Add( "SpawnIcon" )
