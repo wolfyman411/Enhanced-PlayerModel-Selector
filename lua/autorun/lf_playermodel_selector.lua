@@ -178,6 +178,10 @@ local function UpdatePlayerModel( ply )
 		local mdlname = ply:GetInfo( "cl_playermodel" )
 		local mdlpath = player_manager.TranslatePlayerModel( mdlname )
 
+		if not onWhiteList(mdlpath) then
+			return
+		end
+
 		SetMDL( ply, mdlpath )
 		if debugmode then print( "LF_PMS: Set model to: "..tostring( mdlname ).." - "..tostring( mdlpath ) ) end
 
@@ -285,10 +289,68 @@ net.Receive("lf_playermodel_update", function( len, ply )
 	end
 end )
 
+modelWhitelist = {
+}
+
+file.CreateDir("player_storage")
+
+function populateWhiteList()
+	print("Whitelist Populated")
+	local savePath = "player_storage/blacklist.txt"
+
+	local function SaveTextToFile(text)
+		file.Write(savePath, text)
+	end
+
+	local function LoadTextFromFile()
+		if file.Exists(savePath, "DATA") then
+			return file.Read(savePath, "DATA")
+		end
+
+		return ""
+	end
+
+	local lines = string.Explode("\n", LoadTextFromFile())
+
+	for _, line in ipairs(lines) do
+        local model = string.Trim(line)
+        if model != "" then
+            if file.Exists(model, "GAME") then
+                modelWhitelist[model] = true
+            end
+        end
+    end
+end
+
+function onWhiteList(model)
+	if not modelWhitelist[model] then
+		print("not list")
+		return false
+	end
+	return true
+end
+
+function setDefaultModel(ply)
+	local firstModel
+	for model, _ in pairs(modelWhitelist) do
+		firstModel = model
+		break
+	end
+	ply:SetModel(firstModel)
+end
+
 hook.Add( "PlayerSpawn", "lf_playermodel_force_hook1", function( ply )
+	populateWhiteList()
 	if GetConVar( "sv_playermodel_selector_force" ):GetBool() and tobool( ply:GetInfoNum( "cl_playermodel_selector_force", 0 ) ) then
 		--UpdatePlayerModel( ply )
 		ply.lf_playermodel_spawned = nil
+	end
+
+	local plyM = ply:GetModel()
+	if not onWhiteList(plyM) then
+		if firstModel then
+			setDefaultModel(ply)
+		end
 	end
 end )
 
@@ -497,24 +559,13 @@ local myMat2 = CreateMaterial( "HandIconGenerator_RTMat", "UnlitGeneric", {
 local matshiny = Material("models/shiny")
 local hasbgs = Material("eps/hasbgs4.png", "mips smooth") -- or hasbgs3   idk which better
 
-local modelWhitelist = {
-	["models/player/rblx/robloxian2007_hatset1.mdl"] = true,
-	["models/player/rblx/robloxian2007_hatset2.mdl"] = true,
-	["models/player/rblx/robloxian2007_hatset3.mdl"] = true,
-	["models/player/rblx/robloxian2007_hatset4.mdl"] = true,
-	["models/player/rblx/robloxian2007_hatset5.mdl"] = true,
-	["models/player/rblx/robloxian2007_hatset6.mdl"] = true,
-	["models/player/rblx/robloxian2007_hatset7.mdl"] = true,
-	["models/player/rblx/robloxian2007_hatset8.mdl"] = true,
-	["models/player/rblx/robloxian2007_hatset9.mdl"] = true,
-
-	["models/player/rblx/robloxian2007_players.mdl"] = true,
-	["models/player/rblx/robloxian2007_zombie.mdl"] = true,
+modelWhitelist = {
 }
 
 file.CreateDir("player_storage")
 
 function populateWhiteList()
+	print("Whitelist Populated")
 	local savePath = "player_storage/blacklist.txt"
 
 	local function SaveTextToFile(text)
@@ -763,7 +814,7 @@ function Menu.Setup()
 				end
 
 				for name, model in SortedPairs( AllModels ) do
-					if ( #modelWhitelist > 0 and !modelWhitelist[model] and !util.IsValidModel(model) ) then continue end
+					if ( !modelWhitelist[model] ) then continue end
 
 					if IsInFilter( name ) then
 						if GetConVar( "cl_playermodel_selector_ignorehands" ):GetBool() and player_manager.TranslatePlayerHands(name).model == model then continue end -- No
