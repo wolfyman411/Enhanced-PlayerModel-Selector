@@ -289,68 +289,53 @@ net.Receive("lf_playermodel_update", function( len, ply )
 	end
 end )
 
-modelWhitelist = {
-}
-
 file.CreateDir("player_storage")
 
-function populateWhiteList()
-	print("Whitelist Populated")
-	local savePath = "player_storage/blacklist.txt"
+local savePath = "player_storage/blacklist.txt"
+local modelWhitelist = {}
 
-	local function SaveTextToFile(text)
-		file.Write(savePath, text)
-	end
+local function whitelistSave(text)
+	file.Write(savePath, text)
+end
 
-	local function LoadTextFromFile()
-		if file.Exists(savePath, "DATA") then
-			return file.Read(savePath, "DATA")
-		end
-
-		return ""
-	end
-
-	local lines = string.Explode("\n", LoadTextFromFile())
+local function whitelistLoad()
+	local lines = string.Explode("\n", file.Read(savePath, "DATA") or "")
+	if ( lines == "" ) then return end
 
 	for _, line in ipairs(lines) do
         local model = string.Trim(line)
         if model != "" then
-            if file.Exists(model, "GAME") then
+            if file.Exists(model, "GAME") and !onWhitelist(model) then
                 modelWhitelist[model] = true
             end
         end
     end
 end
 
-function onWhiteList(model)
-	if not modelWhitelist[model] then
-		print("not list")
-		return false
-	end
-	return true
+local function onWhiteList(model)
+	return modelWhitelist[model] or false
 end
 
-function setDefaultModel(ply)
-	local firstModel
+local function setDefaultModel(ply)
 	for model, _ in pairs(modelWhitelist) do
-		firstModel = model
+		ply:SetModel(firstModel)
 		break
 	end
-	ply:SetModel(firstModel)
 end
 
+whitelistLoad()
+
 hook.Add( "PlayerSpawn", "lf_playermodel_force_hook1", function( ply )
-	populateWhiteList()
 	if GetConVar( "sv_playermodel_selector_force" ):GetBool() and tobool( ply:GetInfoNum( "cl_playermodel_selector_force", 0 ) ) then
 		--UpdatePlayerModel( ply )
 		ply.lf_playermodel_spawned = nil
 	end
 
 	local plyM = ply:GetModel()
-	if not onWhiteList(plyM) then
-		if firstModel then
+	if !onWhiteList(plyM) then
+		//if firstModel then -- What even is this
 			setDefaultModel(ply)
-		end
+		//end
 	end
 end )
 
@@ -1559,23 +1544,8 @@ function Menu.Setup()
 				t:SetDark( true )
 				t:SetWrap( true )
 
-				local savePath = "player_storage/blacklist.txt"
-				if not file.Exists("player_storage", "DATA") then
-					file.CreateDir("player_storage")
-				end
-				local function SaveTextToFile(text)
-					file.Write(savePath, text)
-				end
-				local function LoadTextFromFile()
-					if file.Exists(savePath, "DATA") then
-						return file.Read(savePath, "DATA")
-					else
-						return ""
-					end
-				end
-
 				local TextEntry = panel:Add("DTextEntry")
-				local tempText = LoadTextFromFile()
+				local tempText = file.Read(savePath, "DATA") or ""
 
 				local function GetLineCount(text)
 					if text == "" then return 0 end
@@ -1586,7 +1556,7 @@ function Menu.Setup()
 					TextEntry:SetValue(tempText)
 					local text = TextEntry:GetValue()
 					TextEntry:SetHeight( 20*GetLineCount(tempText) )
-					print(GetLineCount(tempText))
+					--print(GetLineCount(tempText))
 				else
 					TextEntry:SetHeight( 20 )
 				end
@@ -1597,7 +1567,7 @@ function Menu.Setup()
 				TextEntry.OnChange = function(self)
 					local text = self:GetValue()
 					TextEntry:SetHeight( 20*GetLineCount(text) )
-					SaveTextToFile(text)
+					whitelistSave(text)
 				end
 
 				local t = panel:Add( "DLabel" )
