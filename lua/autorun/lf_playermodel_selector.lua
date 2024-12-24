@@ -299,7 +299,11 @@ local function whitelistSave(text)
 end
 
 local function whitelistLoad()
-	local lines = string.Explode("\n", file.Read(savePath, "DATA") or "")
+	if ( !file.Exists(savePath, "DATA") ) then
+		file.Write(savePath, "")
+	end
+
+	local lines = string.Explode("\n", file.Read(savePath, "DATA")) or ""
 	if ( lines == "" ) then return end
 
 	for _, line in ipairs(lines) do
