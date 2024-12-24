@@ -544,39 +544,6 @@ local myMat2 = CreateMaterial( "HandIconGenerator_RTMat", "UnlitGeneric", {
 local matshiny = Material("models/shiny")
 local hasbgs = Material("eps/hasbgs4.png", "mips smooth") -- or hasbgs3   idk which better
 
-modelWhitelist = {
-}
-
-file.CreateDir("player_storage")
-
-function populateWhiteList()
-	print("Whitelist Populated")
-	local savePath = "player_storage/blacklist.txt"
-
-	local function SaveTextToFile(text)
-		file.Write(savePath, text)
-	end
-
-	local function LoadTextFromFile()
-		if file.Exists(savePath, "DATA") then
-			return file.Read(savePath, "DATA")
-		end
-
-		return ""
-	end
-
-	local lines = string.Explode("\n", LoadTextFromFile())
-
-	for _, line in ipairs(lines) do
-        local model = string.Trim(line)
-        if model != "" then
-            if file.Exists(model, "GAME") then
-                modelWhitelist[model] = true
-            end
-        end
-    end
-end
-
 function Menu.UpdateFromConvars()
 	-- wah wah dont error ples
 end
